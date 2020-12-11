@@ -19,7 +19,7 @@ void configureRtc() {
 }
 
 
-// Read current RTC date and time
+// Read RTC's date and time
 void readRtc() {
 
   // Start loop timer

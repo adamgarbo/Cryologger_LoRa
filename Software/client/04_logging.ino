@@ -1,23 +1,20 @@
-// Enable microSD 
+// Enable microSD power and SPI CS
 void enableLogging() {
-  digitalWrite(RFM95W_CS, HIGH);
+  digitalWrite(PIN_RFM95W_CS, HIGH);  // Disable LoRa SPI CS pin
   delay(1);
-  digitalWrite(PIN_MICROSD_EN, LOW); // Enable power to microSD
-  digitalWrite(PIN_MICROSD_CS, LOW); // Set chip select LOW
-  delay(1);
+  digitalWrite(PIN_MICROSD_EN, LOW);  // Enable power to microSD
+  digitalWrite(PIN_MICROSD_CS, LOW);  // Enable microSD SPI CS pin
+  delay(250);
 }
 
 // Configure microSD
 void configureSd() {
 
-  enableLogging();
-  delay(1000);
+  enableLogging(); // Enable microSD and disable LoRa
+
   // Initialze microSD
   if (!sd.begin(PIN_MICROSD_CS, SD_SCK_MHZ(4))) {
     DEBUG_PRINTLN("Warning: microSD not detected! Please check wiring.");
-  }
-  else {
-    DEBUG_PRINTLN("microSD initialized.");
   }
 }
 
@@ -73,16 +70,20 @@ void logData() {
     DEBUG_PRINTLN("Warning: Unable to open file!");
   }
 
-  // Force data to SD and update the directory entry to avoid data loss
-  if (!file.sync() || file.getWriteError()) {
-    DEBUG_PRINTLN(F("Warning: Write error!"));
+  // Sync log file
+  if (!file.sync()) {
+    DEBUG_PRINTLN(F("Warning: File sync error!"));
   }
 
-  // Sync log file
-  //file.sync();
+  // Check for write error
+  if (file.getWriteError()) {
+    DEBUG_PRINTLN(F("Warning: File write error!"));
+  }
 
   // Close log file
-  file.close();
+  if (!file.close()) {
+    DEBUG_PRINTLN(F("Warning: File close error!"));
+  }
 
   // Print outputData to terminal
   DEBUG_PRINT("outputData: "); DEBUG_PRINT(outputData);

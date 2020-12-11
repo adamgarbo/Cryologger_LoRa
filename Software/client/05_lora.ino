@@ -1,22 +1,19 @@
 // Enable LoRa
 void enableLora() {
-  digitalWrite(PIN_MICROSD_EN, HIGH);
-  digitalWrite(PIN_MICROSD_CS, HIGH);
+  digitalWrite(PIN_MICROSD_EN, HIGH); // Disable microSD power
+  digitalWrite(PIN_MICROSD_CS, HIGH); // Disable microSD SPI CS pin
   delay(1);
-  digitalWrite(RFM95W_CS, LOW);
+  digitalWrite(PIN_RFM95W_CS, LOW);   // Enable LoRa SPI CS pin
   delay(1);
 }
 
 // Initialize RFM95W
 void configureLora() {
 
-  enableLora();
+  enableLora(); // Enable LoRa and disable microSD
 
   if (!manager.init()) {
     DEBUG_PRINTLN("Warning: RFM95W initialization failed!");
-  }
-  else {
-    DEBUG_PRINTLN("RFM95W initializated.");
   }
 
   // Defaults after init are 434.0MHz, 13dBm, Bw = 125 kHz, Cr = 4/5,
@@ -38,8 +35,8 @@ void configureLora() {
 // Send LoRa data
 void sendData() {
 
-  DEBUG_PRINTLN("Sending to RF95 reliable datagram server...");
-  DEBUG_PRINT("outputData size: "); DEBUG_PRINTLN(sizeof(outputData));
+  DEBUG_PRINTLN("Sending message to server...");
+  //DEBUG_PRINT("outputData size: "); DEBUG_PRINTLN(sizeof(outputData));
 
   // Send message to server
   if (manager.sendtoWait((uint8_t*)outputData, sizeof(outputData), SERVER_ADDRESS)) {
@@ -50,16 +47,19 @@ void sendData() {
     if (manager.recvfromAckTimeout(buf, &len, 2000, &from)) {
       DEBUG_PRINT("Received reply from: 0x");
       DEBUG_PRINTLN_HEX(from);
-      DEBUG_PRINT("Decoded message: ");
+      DEBUG_PRINT("Server reply: ");
       DEBUG_PRINTLN((char*)buf);
-      //RH_RF95::printBuffer("Raw data: ", buf, len);
 
-      DEBUG_PRINT("Raw data: ");
-      for (int i = 0; i < len; ++i) {
+      /*
+        DEBUG_PRINT("Raw data: ");
+        for (int i = 0; i < len; ++i) {
         DEBUG_PRINT_HEX(buf[i]);
         DEBUG_PRINT(" ");
-      }
-      DEBUG_PRINTLN();
+        }
+        DEBUG_PRINTLN();
+      */
+      DEBUG_PRINT("RSSI: ");
+      DEBUG_PRINT_DEC(driver.lastRssi());
     }
     else {
       DEBUG_PRINTLN("Warning: No reply! Is the server running?");

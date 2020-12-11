@@ -1,7 +1,7 @@
 /*
   Cryologger: RFM95W Reliable Datagram Client
 
-  Date: December 10, 2020
+  Date: December 11, 2020
 
   Description:
   - Example sketch showing how to create a simple addressed, reliable messaging
@@ -27,11 +27,11 @@
 #define DEBUG true
 
 #if DEBUG
-#define DEBUG_PRINT(x)      Serial.print(x)
-#define DEBUG_PRINTLN(x)    Serial.println(x)
-#define DEBUG_PRINT_HEX(x)  Serial.print(x, HEX)
+#define DEBUG_PRINT(x)        Serial.print(x)
+#define DEBUG_PRINTLN(x)      Serial.println(x)
+#define DEBUG_PRINT_HEX(x)    Serial.print(x, HEX)
 #define DEBUG_PRINTLN_HEX(x)  Serial.println(x, HEX)
-#define DEBUG_PRINT_DEC(x)  Serial.println(x, DEC)
+#define DEBUG_PRINT_DEC(x)    Serial.println(x, DEC)
 #else
 #define DEBUG_PRINT(x)
 #define DEBUG_PRINTLN(x)
@@ -43,12 +43,12 @@
 // ----------------------------------------------------------------------------
 // Definitions
 // ----------------------------------------------------------------------------
-#define SERVER_ADDRESS 1
-#define CLIENT_ADDRESS 2
+#define SERVER_ADDRESS  1
+#define CLIENT_ADDRESS  2
 
-#define RFM95W_FREQ   915.0
-#define RFM95W_CS     A2
-#define RFM95W_INT    9
+#define RFM95W_FREQ     915.0
+#define PIN_RFM95W_CS   A2
+#define PIN_RFM95W_INT  9
 
 // ----------------------------------------------------------------------------
 // Pin definitions
@@ -66,7 +66,7 @@ SdFat   sd;    // File system object
 SdFile  file;  // Log file
 
 // Singleton instance of the radio driver
-RH_RF95 driver(RFM95W_CS, RFM95W_INT);
+RH_RF95 driver(PIN_RFM95W_CS, PIN_RFM95W_INT);
 
 // Class to manage message delivery and receipt using driver declared above
 RHReliableDatagram manager(driver, CLIENT_ADDRESS);
@@ -100,9 +100,9 @@ void setup() {
   pinMode(PIN_MICROSD_EN, OUTPUT);
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
+  digitalWrite(PIN_MICROSD_EN, LOW);
   digitalWrite(PIN_MICROSD_CS, HIGH);
-  digitalWrite(PIN_MICROSD_EN, HIGH);
-  digitalWrite(RFM95W_CS, HIGH);
+  digitalWrite(PIN_RFM95W_CS, HIGH);
 
   analogReadResolution(12); // Set analog resolution to 12-bits
 
@@ -117,9 +117,9 @@ void setup() {
   SPI.begin();  // Initialize SPI
 
   configureRtc();   // Configure real-time clock
-  //configureSd();    // Configure microSD
-  //createLogFile();  // Create log file
   configureLora();  // Configure RFM95W
+  configureSd();    // Configure microSD
+  createLogFile();  // Create log file
 }
 
 // ----------------------------------------------------------------------------
@@ -141,12 +141,11 @@ void loop() {
     readRtc();
     readBattery();
 
-    // Log data to microSD
-    //enableLogging();
-    //logData();
+    // Log data
+    configureSd();    // Re-initialize microSD
+    logData();        // Write data to log file
 
     // Transmit data
-    enableLora();
     sendData();
 
     delay(1000);
