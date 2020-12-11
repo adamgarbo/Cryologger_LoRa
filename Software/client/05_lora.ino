@@ -7,6 +7,11 @@ void enableLora() {
   delay(1);
 }
 
+void disableLora() {
+  digitalWrite(PIN_RFM95W_CS, LOW);   // Enable LoRa SPI CS pin
+  driver.sleep(); // Enable RFM95W sleep mode
+}
+
 // Initialize RFM95W
 void configureLora() {
 
@@ -29,13 +34,12 @@ void configureLora() {
 
   // Wait for Channel Activity Detection to show no activity before transmitting
   //driver.setCADTimeout(10000);
-
 }
 
 // Send LoRa data
 void sendData() {
 
-  DEBUG_PRINTLN("Sending message to server...");
+  DEBUG_PRINT("Sending message to server...");
   //DEBUG_PRINT("outputData size: "); DEBUG_PRINTLN(sizeof(outputData));
 
   // Send message to server
@@ -45,10 +49,10 @@ void sendData() {
     uint8_t len = sizeof(buf);
     uint8_t from;
     if (manager.recvfromAckTimeout(buf, &len, 2000, &from)) {
-      DEBUG_PRINT("Received reply from: 0x");
+      DEBUG_PRINT(" reply received from: 0x");
       DEBUG_PRINTLN_HEX(from);
       DEBUG_PRINT("Server reply: ");
-      DEBUG_PRINTLN((char*)buf);
+      DEBUG_PRINT((char*)buf);
 
       /*
         DEBUG_PRINT("Raw data: ");
@@ -58,8 +62,8 @@ void sendData() {
         }
         DEBUG_PRINTLN();
       */
-      DEBUG_PRINT("RSSI: ");
-      DEBUG_PRINT_DEC(driver.lastRssi());
+      DEBUG_PRINT(" RSSI: ");
+      DEBUG_PRINTLN(driver.lastRssi());
     }
     else {
       DEBUG_PRINTLN("Warning: No reply! Is the server running?");
@@ -69,7 +73,8 @@ void sendData() {
     DEBUG_PRINTLN("Warning: sendtoWait failed");
   }
 
-  // Clear arrays
-  memset(outputData, 0x00, sizeof(outputData));
-  memset(tempData, 0x00, sizeof(tempData));
+  // Write data to SD buffer
+  sprintf(tempData, "%d,\n", driver.lastRssi());
+  strcat(outputData, tempData);
+
 }

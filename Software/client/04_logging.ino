@@ -1,5 +1,5 @@
 // Enable microSD power and SPI CS
-void enableLogging() {
+void enableSd() {
   digitalWrite(PIN_RFM95W_CS, HIGH);  // Disable LoRa SPI CS pin
   delay(1);
   digitalWrite(PIN_MICROSD_EN, LOW);  // Enable power to microSD
@@ -7,10 +7,16 @@ void enableLogging() {
   delay(250);
 }
 
+// Disable power to microSD
+void disableSd() {
+  digitalWrite(PIN_RFM95W_CS, HIGH);  // Disable LoRa SPI CS pin
+  digitalWrite(PIN_MICROSD_EN, HIGH);  // Enable power to microSD
+}
+
 // Configure microSD
 void configureSd() {
 
-  enableLogging(); // Enable microSD and disable LoRa
+  enableSd(); // Enable microSD and disable LoRa
 
   // Initialze microSD
   if (!sd.begin(PIN_MICROSD_CS, SD_SCK_MHZ(4))) {
@@ -46,7 +52,7 @@ void createLogFile() {
   updateFileCreate();
 
   // Write header to file
-  file.println("datetime,unixtime,voltage,");
+  file.println("datetime,unixtime,voltage,rssi,");
 
   // Sync the log file
   file.sync();
@@ -55,7 +61,6 @@ void createLogFile() {
   file.close();
 
   DEBUG_PRINT("Logging to file: "); DEBUG_PRINTLN(fileName);
-
 }
 
 // Log data to microSD
@@ -87,6 +92,10 @@ void logData() {
 
   // Print outputData to terminal
   DEBUG_PRINT("outputData: "); DEBUG_PRINT(outputData);
+
+
+  // Blink LED
+  blinkLed(2, 5000);
 
   // Clear arrays
   memset(outputData, 0x00, sizeof(outputData));

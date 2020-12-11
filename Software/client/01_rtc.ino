@@ -42,9 +42,10 @@ void readRtc() {
 // Set RTC rolling alarm
 void setRtcAlarm() {
 
+//(rtc.getSeconds() + alarmSeconds) % 60
   rtc.setAlarmTime((rtc.getHours() + alarmHours) % 24,
                    (rtc.getMinutes() + alarmMinutes) % 60,
-                   (rtc.getSeconds() + alarmSeconds) % 60);
+                   0);
   rtc.setAlarmDate(rtc.getDay(), rtc.getMonth(), rtc.getYear());
 
   rtc.enableAlarm(rtc.MATCH_SS);

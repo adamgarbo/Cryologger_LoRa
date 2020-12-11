@@ -24,7 +24,7 @@
 // ----------------------------------------------------------------------------
 // Debugging macros
 // ----------------------------------------------------------------------------
-#define DEBUG true
+#define DEBUG false
 
 #if DEBUG
 #define DEBUG_PRINT(x)        Serial.print(x)
@@ -76,8 +76,8 @@ RHReliableDatagram manager(driver, CLIENT_ADDRESS);
 // ----------------------------------------------------------------------------
 volatile bool alarmFlag       = false;  // Alarm interrupt service routine flag
 bool          ledState        = LOW;    // LED toggle flag
-byte          alarmSeconds    = 30;     // Rolling alarm seconds
-byte          alarmMinutes    = 0;      // Rolling alarm minutes
+byte          alarmSeconds    = 0;     // Rolling alarm seconds
+byte          alarmMinutes    = 1;      // Rolling alarm minutes
 byte          alarmHours      = 0;      // Rolling alarm hours
 unsigned long previousMillis  = 0;      // Global millis() timer
 
@@ -141,24 +141,23 @@ void loop() {
     readRtc();
     readBattery();
 
+    // Transmit data
+    sendData();
+
     // Log data
     configureSd();    // Re-initialize microSD
     logData();        // Write data to log file
 
-    // Transmit data
-    sendData();
-
-    delay(1000);
     digitalWrite(LED_BUILTIN, LOW);
 
-    // Enable RFM95W sleep mode
-    driver.sleep();
+    disableLora();
+    disableSd();
   }
 
   // Blink LED
   blinkLed(1, 25);
 
   // Enter deep sleep
-  //LowPower.deepSleep();
-  delay(1000);
+  LowPower.deepSleep();
+  //delay(1000);
 }

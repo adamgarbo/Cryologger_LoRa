@@ -7,8 +7,9 @@ void readBattery() {
   float voltage = analogRead(A5) * 2.0 * (3.3 / 4096.0); // 0.003226 = 3.3 / 1023
 
   int vbat = voltage * 1000;
+
   // Write data to SD buffer
-  sprintf(tempData, "%d,\n", vbat);
+  sprintf(tempData, "%d,", vbat);
   strcat(outputData, tempData);
 
   //DEBUG_PRINT("voltage: "); DEBUG_PRINTLN(voltage);
