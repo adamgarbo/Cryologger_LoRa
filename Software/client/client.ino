@@ -1,7 +1,7 @@
 /*
   Cryologger: RFM95W Reliable Datagram Client
 
-  Date: December 11, 2020
+  Date: December 13, 2020
 
   Description:
   - Example sketch showing how to create a simple addressed, reliable messaging
@@ -24,7 +24,7 @@
 // ----------------------------------------------------------------------------
 // Debugging macros
 // ----------------------------------------------------------------------------
-#define DEBUG false
+#define DEBUG true
 
 #if DEBUG
 #define DEBUG_PRINT(x)        Serial.print(x)
@@ -46,9 +46,19 @@
 #define SERVER_ADDRESS  1
 #define CLIENT_ADDRESS  2
 
-#define RFM95W_FREQ     915.0
-#define PIN_RFM95W_CS   A2
-#define PIN_RFM95W_INT  9
+// ----------------------------------------------------------------------------
+// RFM95W radio definitions
+// ----------------------------------------------------------------------------
+#define RF95_FREQ     915.0     // Radio frequency (MHz)
+#define RF95_PW       20        // Transmit power (dBm)
+#define RF95_SF       7         // Spreading factor
+#define RF95_BW       125000     // Bandwidth (MHz)
+#define RF95_CR       5         // Coding rate
+#define RF95_CRC      true      // Cyclic Redundancy Check (CRC) 
+
+// Moteino M0
+#define PIN_RF95_CS   A2
+#define PIN_RF95_INT  9
 
 // ----------------------------------------------------------------------------
 // Pin definitions
@@ -66,7 +76,7 @@ SdFat   sd;    // File system object
 SdFile  file;  // Log file
 
 // Singleton instance of the radio driver
-RH_RF95 driver(PIN_RFM95W_CS, PIN_RFM95W_INT);
+RH_RF95 driver(PIN_RF95_CS, PIN_RF95_INT);
 
 // Class to manage message delivery and receipt using driver declared above
 RHReliableDatagram manager(driver, CLIENT_ADDRESS);
@@ -74,16 +84,18 @@ RHReliableDatagram manager(driver, CLIENT_ADDRESS);
 // ----------------------------------------------------------------------------
 // Global variables
 // ----------------------------------------------------------------------------
-volatile bool alarmFlag       = false;  // Alarm interrupt service routine flag
+volatile bool alarmFlag       = false;  // RTC alarm ISR flag
+volatile bool watchdogFlag    = false;  // Watchdog Timer ISR flag
+volatile int  watchdogCounter = 0;      // Watchdog Timer interrupt counter
 bool          ledState        = LOW;    // LED toggle flag
-byte          alarmSeconds    = 0;     // Rolling alarm seconds
+byte          alarmSeconds    = 0;      // Rolling alarm seconds
 byte          alarmMinutes    = 1;      // Rolling alarm minutes
 byte          alarmHours      = 0;      // Rolling alarm hours
 unsigned long previousMillis  = 0;      // Global millis() timer
 
 char          fileName[30]    = "";
-char          outputData[100];          // Recording to SD in 512-byte chunks
-char          tempData[50];             // Temporary SD data buffer
+char          outputData[50];           // Recording to SD in 512-byte chunks
+//char          tempData[51];             // Temporary SD data buffer
 
 uint8_t data[] = "Hello World!";
 
@@ -102,7 +114,7 @@ void setup() {
   digitalWrite(LED_BUILTIN, LOW);
   digitalWrite(PIN_MICROSD_EN, LOW);
   digitalWrite(PIN_MICROSD_CS, HIGH);
-  digitalWrite(PIN_RFM95W_CS, HIGH);
+  digitalWrite(PIN_RF95_CS, HIGH);
 
   analogReadResolution(12); // Set analog resolution to 12-bits
 
@@ -129,6 +141,7 @@ void loop() {
 
   // Check if alarm flag was set
   if (alarmFlag) {
+    //SPI.begin();      // Enable SPI
     alarmFlag = false;  // Clear alarm flag
     setRtcAlarm();      // Set RTC alarm
 
@@ -154,10 +167,15 @@ void loop() {
     disableSd();
   }
 
+  // Check if watchdog flag was set
+  if (watchdogFlag) {
+    petDog(); // Reset the Watchdog Timer
+  }
+
   // Blink LED
   blinkLed(1, 25);
-
-  // Enter deep sleep
-  LowPower.deepSleep();
-  //delay(1000);
+  //SPI.end(); // Disable SPI
+  // Enter deep sleep and wait for WDT or RTC alarm interrupt
+  //LowPower.deepSleep();
+  delay(1000);
 }

@@ -9,7 +9,7 @@ void enableLora() {
 
 // Disable LoRa
 void disableLora() {
-  driver.sleep();                     // Enable RFM95W sleep mode
+  driver.sleep();                   // Enable RFM95W sleep mode
   digitalWrite(PIN_RF95_CS, HIGH);  // Disable LoRa SPI CS pin
 }
 
@@ -46,7 +46,7 @@ void configureLora() {
   // Set the radio signal bandwidth (125.0, 250.0 or 500.0 MHz)
   driver.setSignalBandwidth(RF95_BW);
 
-  // Set the coding rate to 4/5, 4/6, 4/7 or 4/8 (5, 6, 7 or 8)
+  // Set the coding rate (4/5, 4/6, 4/7 or 4/8)
   driver.setCodingRate4(RF95_CR);
 
   /// Turn on Cyclic Redundancy Check (CRC)
@@ -57,51 +57,14 @@ void configureLora() {
 
 }
 
-// Send LoRa data
-void sendData() {
+          
+void printBuffer(uint8_t* message) {
 
-  DEBUG_PRINT("Sending message to server...");
-
-  // Send message to server
-  if (manager.sendtoWait((uint8_t*)outputData, sizeof(outputData), SERVER_ADDRESS)) {
-
-    DEBUG_PRINT(" Size: ");
-    DEBUG_PRINTLN(sizeof(outputData));
-
-    // Wait for a reply from the server
-    uint8_t len = sizeof(buf);
-    uint8_t from;
-
-    if (manager.recvfromAckTimeout(buf, &len, 2000, &from)) {
-
-      char serverBuffer[100];
-      sprintf(serverBuffer, "Reply from: 0x%02X Size: %d Payload: %s RSSI: %d SNR: %d\n",
-              from, len, buf, driver.lastRssi(), driver.lastSNR());
-      DEBUG_PRINT(serverBuffer);
-
-      /*
-        DEBUG_PRINT("Raw data: ");
-        for (int i = 0; i < len; ++i) {
-        DEBUG_PRINT_HEX(buf[i]);
-        DEBUG_PRINT(" ");
-        }
-        DEBUG_PRINTLN();
-      */
-
-      // Blink LED
-      blinkLed(3, 25);
-    }
-    else {
-      DEBUG_PRINTLN("Warning: No reply! Is the server running?");
-    }
+  // Print payload in hexadecimal
+  DEBUG_PRINT(" Raw payload: ");
+  for (int i = 0; i < sizeof(message); ++i) {
+    DEBUG_PRINT_HEX(message[i]);
+    DEBUG_PRINT(" ");
   }
-  else {
-    DEBUG_PRINTLN("Warning: sendtoWait failed!");
-  }
-
-  // Write data to SD buffer
-  char tempData[10];
-  sprintf(tempData, "%d,%d,\n", driver.lastRssi(), driver.lastSNR());
-  strcat(outputData, tempData);
-
+  DEBUG_PRINTLN();
 }

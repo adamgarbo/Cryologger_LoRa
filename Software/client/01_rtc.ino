@@ -29,6 +29,7 @@ void readRtc() {
   unsigned long unixtime = rtc.getEpoch();
 
   // Write data to SD buffer
+  char tempData[30];
   sprintf(tempData, "20%02d-%02d-%02d %02d:%02d:%02d,%ld,",
           rtc.getYear(), rtc.getMonth(), rtc.getDay(), rtc.getHours(),
           rtc.getMinutes(), rtc.getSeconds(), unixtime);
@@ -36,7 +37,9 @@ void readRtc() {
 
   // Stop loop timer
   unsigned long loopEndTime = millis() - loopStartTime;
-  //DEBUG_PRINT("readRtc() function execution: "); DEBUG_PRINT(loopEndTime); DEBUG_PRINTLN(" ms");
+  //DEBUG_PRINT("readRtc() function execution: "); 
+  //DEBUG_PRINT(loopEndTime); 
+  //DEBUG_PRINTLN(" ms");
 }
 
 // Set RTC rolling alarm

@@ -9,7 +9,6 @@ void readBattery() {
   int vbat = voltage * 1000;
 
   // Write data to SD buffer
-  char tempData[5];
   sprintf(tempData, "%d,", vbat);
   strcat(outputData, tempData);
 
