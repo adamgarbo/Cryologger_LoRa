@@ -31,13 +31,11 @@
 #define DEBUG_PRINTLN(x)      Serial.println(x)
 #define DEBUG_PRINT_HEX(x)    Serial.print(x, HEX)
 #define DEBUG_PRINTLN_HEX(x)  Serial.println(x, HEX)
-#define DEBUG_PRINTLN_BIN(x)  Serial.println(x, BIN)
 #else
 #define DEBUG_PRINT(x)
 #define DEBUG_PRINTLN(x)
 #define DEBUG_PRINT_HEX(x)
 #define DEBUG_PRINTLN_HEX(x)
-#define DEBUG_PRINT_DEC(x)
 #endif
 
 // ----------------------------------------------------------------------------
@@ -59,23 +57,23 @@
 // ----------------------------------------------------------------------------
 // Pin definitions
 // ----------------------------------------------------------------------------
-#define PIN_RF95_CS       A2
-#define PIN_VBAT          A5
-#define PIN_FLASH_CS      8
-#define PIN_RF95_INT      9
-#define PIN_SD_CS    10
-#define PIN_SD_EN    11
-#define PIN_MOSI          19
-#define PIN_SCK           20
-#define PIN_MISO          21
+#define PIN_RF95_CS   A2
+#define PIN_VBAT      A5
+#define PIN_FLASH_CS  8
+#define PIN_RF95_INT  9
+#define PIN_SD_CS     10
+#define PIN_SD_EN     11
+#define PIN_MOSI      19
+#define PIN_SCK       20
+#define PIN_MISO      21
 
 // ----------------------------------------------------------------------------
 // Object instantiations
 // ----------------------------------------------------------------------------
 
 RTCZero rtc;
-SdFat   sd;    // File system object
-SdFile  file;  // Log file
+SdFat   sd;
+SdFile  file;
 
 // Singleton instance of the radio driver
 RH_RF95 driver(PIN_RF95_CS, PIN_RF95_INT);
@@ -127,8 +125,6 @@ void setup() {
   digitalWrite(LED_BUILTIN, LOW);
   digitalWrite(PIN_SD_EN, LOW);
   digitalWrite(PIN_SD_CS, HIGH);
-
-
   digitalWrite(PIN_RF95_CS, HIGH);
 
   analogReadResolution(12); // Set analog resolution to 12-bits
@@ -137,8 +133,10 @@ void setup() {
   //while (!Serial) ; // Wait for serial port to be available
   delay(4000);
 
+  printLine(80);
   DEBUG_PRINTLN("RFM95W Reliable Datagram Client");
   printDateTime();
+  printLine(80);
 
   Wire.begin(); // Initialize I2C
   SPI.begin();  // Initialize SPI

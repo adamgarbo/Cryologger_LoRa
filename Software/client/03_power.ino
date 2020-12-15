@@ -51,7 +51,6 @@ void goToSleep() {
   // Disable microSD card
   disableSd();
 
-
 /*
   // Disable SPI
   SPI.end();

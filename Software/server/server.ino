@@ -4,9 +4,10 @@
   Date: December 13, 2020
 
   Description:
-  - Example sketch showing how to create a simple addressed, reliable messaging server
-  with the RHReliableDatagram class, using the RH_RF95 driver to control a RF95 radio.
-  - It is designed to work with the other RF95 reliable datagram client
+  - Example sketch showing how to create a simple addressed, reliable messaging
+  server with the RHReliableDatagram class, using the RH_RF95 driver to control
+  a RF95 radio.
+  - Designed to work with the other RF95 reliable datagram client
 */
 
 // ----------------------------------------------------------------------------
@@ -19,9 +20,7 @@
 #include <SdFat.h>
 #include <SPI.h>
 #include <Wire.h>
-
 #include <SPIFlash.h> // https://www.github.com/lowpowerlab/spiflash
-
 
 // ----------------------------------------------------------------------------
 // Debugging macros
@@ -33,13 +32,11 @@
 #define DEBUG_PRINTLN(x)      Serial.println(x)
 #define DEBUG_PRINT_HEX(x)    Serial.print(x, HEX)
 #define DEBUG_PRINTLN_HEX(x)  Serial.println(x, HEX)
-#define DEBUG_PRINT_DEC(x)    Serial.print(x, DEC)
 #else
 #define DEBUG_PRINT(x)
 #define DEBUG_PRINTLN(x)
 #define DEBUG_PRINT_HEX(x)
 #define DEBUG_PRINTLN_HEX(x)
-#define DEBUG_PRINT_DEC(x)
 #endif
 
 // ----------------------------------------------------------------------------
@@ -61,33 +58,30 @@
 // ----------------------------------------------------------------------------
 // Pin definitions
 // ----------------------------------------------------------------------------
-#define PIN_RF95_CS       A2
-#define PIN_VBAT          A5
-#define PIN_FLASH_CS      8
-#define PIN_RF95_INT      9
-#define PIN_MICROSD_CS    10
-#define PIN_MICROSD_EN    11
-#define PIN_MOSI          19
-#define PIN_SCK           20
-#define PIN_MISO          21
+#define PIN_RF95_CS   A2
+#define PIN_VBAT      A5
+#define PIN_FLASH_CS  8
+#define PIN_RF95_INT  9
+#define PIN_SD_CS     10
+#define PIN_SD_EN     11
+#define PIN_MOSI      19
+#define PIN_SCK       20
+#define PIN_MISO      21
 
 // ----------------------------------------------------------------------------
 // Object instantiations
 // ----------------------------------------------------------------------------
 
-RTCZero rtc;
-SdFat   sd;    // File system object
-SdFile  file;  // Log file
+RTCZero   rtc;
+SdFat     sd;
+SdFile    file;
+SPIFlash  flash(SS_FLASHMEM);
 
 // Singleton instance of the radio driver
 RH_RF95 driver(PIN_RF95_CS, PIN_RF95_INT);
 
 // Class to manage message delivery and receipt using driver declared above
 RHReliableDatagram manager(driver, SERVER_ADDRESS);
-
-// EF30 for 4mbit  Windbond chip (W25X40CL)
-SPIFlash flash(SS_FLASHMEM);
-
 
 // ----------------------------------------------------------------------------
 // Global variables
@@ -105,7 +99,6 @@ char          fileName[30]    = "";
 char          outputData[100];          // Recording to SD in 512-byte chunks
 char          tempData[50];             // Temporary SD data buffer
 
-
 // Dont put this on the stack:
 // See: https://stackoverflow.com/questions/46437423/how-can-i-avoid-putting-this-variable-on-the-stack
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
@@ -120,6 +113,7 @@ typedef union {
   uint8_t bytes[10]; // Size of structure (10 bytes)
 } LoraPacket;
 
+// Create variable to hold transmission values
 LoraPacket message;
 
 // ----------------------------------------------------------------------------
@@ -134,8 +128,10 @@ void setup() {
   //while (!Serial) ; // Wait for serial port to be available
   delay(4000);
 
+  printLine(80);
   DEBUG_PRINTLN("RFM95W reliable datagram server");
   printDateTime();
+  printLine(80);
 
   Wire.begin(); // Initialize I2C
   SPI.begin(); // Initialize SPI
@@ -164,7 +160,7 @@ void loop() {
     if (manager.recvfromAck(buf, &len, &from)) {
 
       char tempBuffer[100];
-      sprintf(tempBuffer, "Request from: 0x%02X Size: %d RSSI: %d SNR: %d",
+      sprintf(tempBuffer, "Request from: 0x%02X\nSize: %d RSSI: %d SNR: %d",
               from, len, driver.lastRssi(), driver.lastSNR() );
       DEBUG_PRINTLN(tempBuffer);
 
