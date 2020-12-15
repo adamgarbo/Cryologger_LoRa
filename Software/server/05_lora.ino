@@ -1,7 +1,17 @@
+// ---------------------------------------
+// RFM95W initialization defaults:
+// ---------------------------------------
+// Frequency:         434.0 MHz
+// Power:             13 dBm
+// Bandwidth:         125 kHz
+// Coding Rate:       4/5
+// Spreading Factor:  7 (128 chips/symbol)
+// CRC:               ON
+// ---------------------------------------
+
 // Enable LoRa
 void enableLora() {
-  digitalWrite(PIN_MICROSD_EN, HIGH); // Disable microSD power
-  digitalWrite(PIN_MICROSD_CS, HIGH); // Disable microSD SPI CS pin
+  digitalWrite(PIN_FLASH_CS, HIGH); // Disable Flash SPI CS pin
   delay(1);
   digitalWrite(PIN_RF95_CS, LOW);   // Enable LoRa SPI CS pin
   delay(1);
@@ -13,19 +23,11 @@ void disableLora() {
   digitalWrite(PIN_RF95_CS, HIGH);  // Disable LoRa SPI CS pin
 }
 
-// Initialize RFM95W
+// Configure RFM95W radio
 void configureLora() {
 
-  // ---------------------------------------
-  // RFM95W initialization defaults:
-  // ---------------------------------------
-  // Frequency:         434.0 MHz
-  // Power:             13 dBm
-  // Bandwidth:         125 kHz
-  // Coding Rate:       4/5
-  // Spreading Factor:  7 (128 chips/symbol)
-  // CRC:               ON
-  // ---------------------------------------
+  // Enable LoRa
+  enableLora(); 
 
   // Initialize RFM95W
   if (!manager.init()) {
@@ -52,19 +54,7 @@ void configureLora() {
   /// Turn on Cyclic Redundancy Check (CRC)
   driver.setPayloadCRC(RF95_CRC);
 
-  // Wait until Channel Activity Detection shows no activity before transmitting
+  // Check Channel Activity Detection before transmitting
   driver.setCADTimeout(10000);
 
-}
-
-          
-void printBuffer(uint8_t* message) {
-
-  // Print payload in hexadecimal
-  DEBUG_PRINT(" Raw payload: ");
-  for (int i = 0; i < sizeof(message); ++i) {
-    DEBUG_PRINT_HEX(message[i]);
-    DEBUG_PRINT(" ");
-  }
-  DEBUG_PRINTLN();
 }

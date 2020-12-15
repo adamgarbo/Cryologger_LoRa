@@ -28,8 +28,11 @@ void readRtc() {
   // Get UNIX Epoch time
   unsigned long unixtime = rtc.getEpoch();
 
+  // Write data to union structure
+  message.unixtime = unixtime;
+  
   // Write data to SD buffer
-  char tempData[30];
+  char tempData[31];
   sprintf(tempData, "20%02d-%02d-%02d %02d:%02d:%02d,%ld,",
           rtc.getYear(), rtc.getMonth(), rtc.getDay(), rtc.getHours(),
           rtc.getMinutes(), rtc.getSeconds(), unixtime);

@@ -31,7 +31,7 @@
 #define DEBUG_PRINTLN(x)      Serial.println(x)
 #define DEBUG_PRINT_HEX(x)    Serial.print(x, HEX)
 #define DEBUG_PRINTLN_HEX(x)  Serial.println(x, HEX)
-#define DEBUG_PRINT_DEC(x)    Serial.println(x, DEC)
+#define DEBUG_PRINTLN_BIN(x)  Serial.println(x, BIN)
 #else
 #define DEBUG_PRINT(x)
 #define DEBUG_PRINTLN(x)
@@ -49,23 +49,25 @@
 // ----------------------------------------------------------------------------
 // RFM95W radio definitions
 // ----------------------------------------------------------------------------
-#define RF95_FREQ     915.0     // Radio frequency (MHz)
-#define RF95_PW       20        // Transmit power (dBm)
-#define RF95_SF       7         // Spreading factor
-#define RF95_BW       125000     // Bandwidth (MHz)
-#define RF95_CR       5         // Coding rate
-#define RF95_CRC      true      // Cyclic Redundancy Check (CRC) 
-
-// Moteino M0
-#define PIN_RF95_CS   A2
-#define PIN_RF95_INT  9
+#define RF95_FREQ     915.0   // Radio frequency (MHz)
+#define RF95_PW       20      // Transmit power (dBm)
+#define RF95_SF       7       // Spreading factor
+#define RF95_BW       125000  // Bandwidth (MHz)
+#define RF95_CR       5       // Coding rate
+#define RF95_CRC      true    // Cyclic Redundancy Check (CRC) 
 
 // ----------------------------------------------------------------------------
 // Pin definitions
 // ----------------------------------------------------------------------------
-#define PIN_VBAT        A5
-#define PIN_MICROSD_CS  10
-#define PIN_MICROSD_EN  11
+#define PIN_RF95_CS       A2
+#define PIN_VBAT          A5
+#define PIN_FLASH_CS      8
+#define PIN_RF95_INT      9
+#define PIN_SD_CS    10
+#define PIN_SD_EN    11
+#define PIN_MOSI          19
+#define PIN_SCK           20
+#define PIN_MISO          21
 
 // ----------------------------------------------------------------------------
 // Object instantiations
@@ -92,15 +94,26 @@ byte          alarmSeconds    = 0;      // Rolling alarm seconds
 byte          alarmMinutes    = 1;      // Rolling alarm minutes
 byte          alarmHours      = 0;      // Rolling alarm hours
 unsigned long previousMillis  = 0;      // Global millis() timer
+unsigned int  transmitCounter  = 0;      // LoRa transmission counter
 
 char          fileName[30]    = "";
 char          outputData[50];           // Recording to SD in 512-byte chunks
-//char          tempData[51];             // Temporary SD data buffer
-
-uint8_t data[] = "Hello World!";
 
 // Dont put this on the stack:
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
+
+
+// Union/structure to store and send data byte-by-byte via LoRa
+typedef union {
+  struct {
+    uint32_t  unixtime;         // UNIX Epoch time      (4 bytes)
+    float     voltage;          // Battery voltage (V)  (4 bytes)
+    uint16_t  transmitCounter;  // Message counter      (2 bytes)
+  } __attribute__((packed));
+  uint8_t bytes[10]; // Size of structure (10 bytes)
+} LoraPacket;
+
+LoraPacket message;
 
 // ----------------------------------------------------------------------------
 // Setup
@@ -109,11 +122,13 @@ void setup() {
 
   // Pin assignments
   pinMode(PIN_VBAT, INPUT);
-  pinMode(PIN_MICROSD_EN, OUTPUT);
+  pinMode(PIN_SD_EN, OUTPUT);
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
-  digitalWrite(PIN_MICROSD_EN, LOW);
-  digitalWrite(PIN_MICROSD_CS, HIGH);
+  digitalWrite(PIN_SD_EN, LOW);
+  digitalWrite(PIN_SD_CS, HIGH);
+
+
   digitalWrite(PIN_RF95_CS, HIGH);
 
   analogReadResolution(12); // Set analog resolution to 12-bits
@@ -132,6 +147,8 @@ void setup() {
   configureLora();  // Configure RFM95W
   configureSd();    // Configure microSD
   createLogFile();  // Create log file
+
+  blinkLed(10, 50);
 }
 
 // ----------------------------------------------------------------------------
@@ -141,14 +158,12 @@ void loop() {
 
   // Check if alarm flag was set
   if (alarmFlag) {
-    //SPI.begin();      // Enable SPI
+    wakeUp();
     alarmFlag = false;  // Clear alarm flag
     setRtcAlarm();      // Set RTC alarm
 
     DEBUG_PRINT("Alarm trigger: ");
     printDateTime();    // Print RTC date and time
-
-    digitalWrite(LED_BUILTIN, HIGH);
 
     // Perform measurements
     readRtc();
@@ -160,11 +175,6 @@ void loop() {
     // Log data
     configureSd();    // Re-initialize microSD
     logData();        // Write data to log file
-
-    digitalWrite(LED_BUILTIN, LOW);
-
-    disableLora();
-    disableSd();
   }
 
   // Check if watchdog flag was set
@@ -174,8 +184,7 @@ void loop() {
 
   // Blink LED
   blinkLed(1, 25);
-  //SPI.end(); // Disable SPI
-  // Enter deep sleep and wait for WDT or RTC alarm interrupt
-  //LowPower.deepSleep();
-  delay(1000);
+
+  goToSleep();
+  //delay(1000);
 }

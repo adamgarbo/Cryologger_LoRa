@@ -20,6 +20,9 @@
 #include <SPI.h>
 #include <Wire.h>
 
+#include <SPIFlash.h> // https://www.github.com/lowpowerlab/spiflash
+
+
 // ----------------------------------------------------------------------------
 // Debugging macros
 // ----------------------------------------------------------------------------
@@ -45,27 +48,28 @@
 #define SERVER_ADDRESS 1
 #define CLIENT_ADDRESS 2
 
-
 // ----------------------------------------------------------------------------
 // RFM95W radio definitions
 // ----------------------------------------------------------------------------
-#define RF95_FREQ     915.0     // Radio frequency (MHz)
-#define RF95_PW       13        // Transmit power (dBm)
-#define RF95_SF       7         // Spreading factor
-#define RF95_BW       125000    // Bandwidth (MHz)
-#define RF95_CR       5         // Coding rate
-#define RF95_CRC      true      // Cyclic Redundancy Check (CRC) 
-
-// Moteino M0
-#define PIN_RF95_CS   A2
-#define PIN_RF95_INT  9
+#define RF95_FREQ     915.0   // Radio frequency (MHz)
+#define RF95_PW       13      // Transmit power (dBm)
+#define RF95_SF       7       // Spreading factor
+#define RF95_BW       125000  // Bandwidth (MHz)
+#define RF95_CR       5       // Coding rate
+#define RF95_CRC      true    // Cyclic Redundancy Check (CRC) 
 
 // ----------------------------------------------------------------------------
 // Pin definitions
 // ----------------------------------------------------------------------------
-#define PIN_VBAT        A5
-#define PIN_MICROSD_CS  10
-#define PIN_MICROSD_EN  11
+#define PIN_RF95_CS       A2
+#define PIN_VBAT          A5
+#define PIN_FLASH_CS      8
+#define PIN_RF95_INT      9
+#define PIN_MICROSD_CS    10
+#define PIN_MICROSD_EN    11
+#define PIN_MOSI          19
+#define PIN_SCK           20
+#define PIN_MISO          21
 
 // ----------------------------------------------------------------------------
 // Object instantiations
@@ -80,6 +84,10 @@ RH_RF95 driver(PIN_RF95_CS, PIN_RF95_INT);
 
 // Class to manage message delivery and receipt using driver declared above
 RHReliableDatagram manager(driver, SERVER_ADDRESS);
+
+// EF30 for 4mbit  Windbond chip (W25X40CL)
+SPIFlash flash(SS_FLASHMEM);
+
 
 // ----------------------------------------------------------------------------
 // Global variables
@@ -102,6 +110,18 @@ char          tempData[50];             // Temporary SD data buffer
 // See: https://stackoverflow.com/questions/46437423/how-can-i-avoid-putting-this-variable-on-the-stack
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 
+// Union/structure to send and receive data byte-by-byte via LoRa
+typedef union {
+  struct {
+    uint32_t  unixtime;         // UNIX Epoch time      (4 bytes)
+    float     voltage;          // Battery voltage (V)  (4 bytes)
+    uint16_t  transmitCounter;  // Message counter      (2 bytes)
+  } __attribute__((packed));
+  uint8_t bytes[10]; // Size of structure (10 bytes)
+} LoraPacket;
+
+LoraPacket message;
+
 // ----------------------------------------------------------------------------
 // Setup
 // ----------------------------------------------------------------------------
@@ -118,14 +138,16 @@ void setup() {
   printDateTime();
 
   Wire.begin(); // Initialize I2C
-  SPI.begin();  // Initialize SPI
+  SPI.begin(); // Initialize SPI
 
+  configureFlash(); // Configure Flash
   configureRtc();   // Configure real-time clock
   configureLora();  // Configure RFM95W
   //configureSd();    // Configure microSD
   //createLogFile();  // Create log file
 
   DEBUG_PRINTLN("Listening for messages...");
+  blinkLed(10, 50);
 }
 
 // ----------------------------------------------------------------------------
@@ -141,22 +163,22 @@ void loop() {
 
     if (manager.recvfromAck(buf, &len, &from)) {
 
-      char clientBuffer[100];
-      sprintf(clientBuffer, "Request from: 0x%02X Size: %d Payload: %s RSSI: %d SNR: %d",
-              from, len, buf, driver.lastRssi(), driver.lastSNR() );
-      DEBUG_PRINTLN(clientBuffer);
+      char tempBuffer[100];
+      sprintf(tempBuffer, "Request from: 0x%02X Size: %d RSSI: %d SNR: %d",
+              from, len, driver.lastRssi(), driver.lastSNR() );
+      DEBUG_PRINTLN(tempBuffer);
 
-      // Print payload in hexadecimal
-      DEBUG_PRINT(" Raw payload: ");
+      // Write incoming message buffer to union/structure
       for (int i = 0; i < len; ++i) {
-        DEBUG_PRINT_HEX(buf[i]);
-        DEBUG_PRINT(" ");
+        message.bytes[i] = buf[i];
       }
-      DEBUG_PRINTLN();
 
+      // Print union/structure payload contents
+      printUnion();
+      printUnionHex();
+
+      // Send reply back to the originator client
       uint8_t data[] = "OK";
-
-      // Send a reply back to the originator client
       if (!manager.sendtoWait(data, sizeof(data), from)) {
         DEBUG_PRINTLN("sendtoWait failed");
       }
