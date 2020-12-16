@@ -22,6 +22,13 @@ void printUnion() {
   printLine(30);
 }
 
+void printCsv() {
+
+  DEBUG_PRINT(message.unixtime); DEBUG_PRINT(",");
+  DEBUG_PRINT(message.voltage); DEBUG_PRINT(",");
+  DEBUG_PRINTLN(message.transmitCounter);
+}
+
 // Print contents of union/structure in hexadecimal
 void printUnionHex() {
   DEBUG_PRINTLN("Payload (Hex):");

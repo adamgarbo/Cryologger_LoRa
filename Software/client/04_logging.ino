@@ -95,7 +95,7 @@ void logData() {
   DEBUG_PRINT("outputData: "); DEBUG_PRINT(outputData);
 
   // Blink LED
-  blinkLed(2, 1000);
+  blinkLed(2, 10);
 
   // Clear arrays
   memset(outputData, 0x00, sizeof(outputData));

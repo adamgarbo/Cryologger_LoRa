@@ -8,6 +8,9 @@ void configureRtc() {
   //rtc.setTime(12, 59, 55); // (hours, minutes, seconds)
   //rtc.setDate(10, 12, 20); // (day, month, year)
 
+  // Set RTC epoch  
+  //rtc.setEpoch(1608055300);
+
   // Set alarm to occur on next hour rollover
   rtc.setAlarmTime(0, 0, 0);
 

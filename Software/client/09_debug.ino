@@ -17,6 +17,8 @@ void printUnion() {
   DEBUG_PRINTLN("Union/structure");
   printLine(80);
   DEBUG_PRINT("unixtime:"); printTab(1); DEBUG_PRINTLN(message.unixtime);
+  DEBUG_PRINT("latitude:"); printTab(1); DEBUG_PRINTLN(message.latitude);
+  DEBUG_PRINT("longitude:"); printTab(1); DEBUG_PRINTLN(message.longitude);
   DEBUG_PRINT("voltage:"); printTab(1); DEBUG_PRINTLN(message.voltage);
   DEBUG_PRINT("counter:"); printTab(1); DEBUG_PRINTLN(message.transmitCounter);
   printLine(80);
