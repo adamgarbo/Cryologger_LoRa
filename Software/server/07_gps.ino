@@ -1,5 +1,7 @@
 // Configure GPS
-void configureGps() {
+void enableGps() {
+
+  DEBUG_PRINTLN("Enabling GPS...");
 
   // Enable power to GPS
   digitalWrite(PIN_GPS_EN, LOW);
@@ -19,13 +21,24 @@ void configureGps() {
 
   // Disable antenna updates
   GpsSerial.println("$PGCMD,33,0*6D");
+}
+
+void disableGps() {
+
+  DEBUG_PRINTLN("Disabling GPS...");
+
+  // Close GPS serial port
+  GpsSerial.end();
 
   // Disable power to GPS
-  //digitalWrite(PIN_GPS_EN, HIGH);
+  digitalWrite(PIN_GPS_EN, HIGH);
 }
 
 // Read GPS
 void readGps() {
+
+  // Enable GPS
+  enableGps();
 
   // Start loop timer
   unsigned long loopStartTime = millis();
@@ -98,57 +111,42 @@ void readGps() {
   DEBUG_PRINT("readGps() function execution: ");
   DEBUG_PRINT(loopEndTime); DEBUG_PRINTLN(" ms");
 
+  // Disable GPS
+  disableGps();
 }
 
 // Read GPS
 void syncRtc() {
 
+  // Enable GPS
+  enableGps();
+
   // Start loop timer
   unsigned long loopStartTime = millis();
 
-  bool fixFound = false;
+  bool rtcSyncFlag = false;
   bool charsSeen = false;
-  byte fixCounter = 0;
 
   DEBUG_PRINTLN("Attempting to sync RTC with GPS...");
 
   // Look for GPS signal for up to 5 minutes
-  while (!fixFound && millis() - loopStartTime < 5UL * 60UL * 1000UL) {
+  while (!rtcSyncFlag && millis() - loopStartTime < 5UL * 60UL * 1000UL) {
     if (GpsSerial.available()) {
-      charsSeen = true;
-      char c = GpsSerial.read();
 
-      DEBUG_WRITE(c); // Echo NMEA sentences to serial
+      // Read serial data
+      char c = GpsSerial.read();
 
       if (gps.encode(c)) {
         // Check if GPS data is valid and up-to-date
-        if ((gps.location.isValid() && gps.date.isValid() && gps.time.isValid()) &&
-            (gps.location.isUpdated() && gps.date.isUpdated() && gps.time.isUpdated())) {
+        if ((gps.date.isValid() && gps.time.isValid()) &&
+            (gps.date.isUpdated() && gps.time.isUpdated())) {
 
-          // Increment fix counter
-          fixCounter++;
+          // Sync RTC with GPS time
+          rtc.setTime(gps.time.hour(), gps.time.minute(), gps.time.second());
+          rtc.setDate(gps.date.day(), gps.date.month(), gps.date.year() - 2000);
 
-          char gpsDatetime[25];
-          snprintf(gpsDatetime, sizeof(gpsDatetime), "%04u-%02d-%02d %02d:%02d:%02d,",
-                   gps.date.year(), gps.date.month(), gps.date.day(),
-                   gps.time.hour(), gps.time.minute(), gps.time.second());
-          DEBUG_PRINT(gpsDatetime);
-          DEBUG_PRINT(gps.location.lat()); DEBUG_PRINT(",");
-          DEBUG_PRINT(gps.location.lng()); DEBUG_PRINT(",");
-          DEBUG_PRINT(gps.satellites.value()); DEBUG_PRINT(",");
-          DEBUG_PRINTLN(gps.hdop.hdop());
-
-          // Check if minimum number of GPS fixes have been collected
-          if (fixCounter >= 5) {
-            fixFound = true;
-
-            // Sync RTC with GPS time
-            rtc.setTime(gps.time.hour(), gps.time.minute(), gps.time.second());
-            rtc.setDate(gps.date.day(), gps.date.month(), gps.date.year() - 2000);
-
-            //rtcSyncFlag = true;
-            DEBUG_PRINT("Success: RTC synced! "); printDateTime();
-          }
+          rtcSyncFlag = true;
+          DEBUG_PRINT("Success: RTC synced! "); printDateTime();
         }
       }
     }
@@ -158,16 +156,12 @@ void syncRtc() {
       break;
     }
   }
-  DEBUG_PRINTLN(charsSeen ? fixFound ?
-                ("A GPS fix was found!") :
-                ("No GPS fix was found.") :
-                ("Wiring error: No GPS data seen."));
-
-  // Disable power to GPS
-  //digitalWrite(PIN_GPS_EN, HIGH);
 
   // Stop loop timer
   unsigned long loopEndTime = millis() - loopStartTime;
-  DEBUG_PRINT("readGps() function execution: ");
+  DEBUG_PRINT("syncRtc() function execution: ");
   DEBUG_PRINT(loopEndTime); DEBUG_PRINTLN(" ms");
+
+  // Disable GPS
+  disableGps();
 }

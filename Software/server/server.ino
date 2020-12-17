@@ -19,7 +19,7 @@
 #include <RTCZero.h>
 #include <SdFat.h>
 #include <SPI.h>
-#include <SPIFlash.h>   // https://www.github.com/lowpowerlab/spiflash
+#include <SPIFlash.h>   // https://github.com/lowpowerlab/spiflash
 #include <TinyGPS++.h>  // https://github.com/mikalhart/TinyGPSPlus
 #include <Wire.h>
 
@@ -81,7 +81,6 @@
 // ----------------------------------------------------------------------------
 // Object instantiations
 // ----------------------------------------------------------------------------
-
 RTCZero     rtc;
 SdFat       sd;
 SdFile      file;
@@ -91,7 +90,7 @@ TinyGPSPlus gps;
 // Singleton instance of the radio driver
 RH_RF95 driver(PIN_RF95_CS, PIN_RF95_INT);
 
-// Class to manage message delivery and receipt using driver declared above
+// Class to manage message delivery and receipt using declared radio driver
 RHReliableDatagram manager(driver, SERVER_ADDRESS);
 
 // ----------------------------------------------------------------------------
@@ -149,7 +148,6 @@ void setup() {
 
   configureFlash(); // Configure Flash
   configureRtc();   // Configure real-time clock
-  configureGps();   // Configure GPS
   syncRtc();        // Sync RTC with GPS
   configureLora();  // Configure RFM95W
   //configureSd();    // Configure microSD
