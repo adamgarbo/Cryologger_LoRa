@@ -4,7 +4,7 @@ void readBattery() {
   // Start loop timer
   unsigned long loopStartTime = millis();
 
-  float voltage = analogRead(A5) * 2.0 * (3.3 / 4096.0);
+  float voltage = analogRead(PIN_VBAT) * 2.0 * (3.3 / 4096.0);
 
   // Write data to union structure
   message.voltage = voltage;
@@ -66,7 +66,7 @@ void goToSleep() {
   digitalWrite(PIN_MICROSD_CS, LOW);
 */
   // Enter deep sleep and wait for WDT or RTC alarm interrupt
-  LowPower.deepSleep();
+  //LowPower.deepSleep();
 }
 
 void wakeUp() {

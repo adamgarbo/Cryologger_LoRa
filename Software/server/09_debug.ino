@@ -17,6 +17,8 @@ void printUnion() {
   DEBUG_PRINTLN("Payload:");
   printLine(30);
   DEBUG_PRINT("unixtime:"); printTab(1); DEBUG_PRINTLN(message.unixtime);
+  DEBUG_PRINT("latitude:"); printTab(1); DEBUG_PRINTLN(message.latitude);
+  DEBUG_PRINT("longitude:"); printTab(1); DEBUG_PRINTLN(message.longitude);
   DEBUG_PRINT("voltage:"); printTab(1); DEBUG_PRINTLN(message.voltage);
   DEBUG_PRINT("counter:"); printTab(1); DEBUG_PRINTLN(message.transmitCounter);
   printLine(30);
@@ -25,6 +27,8 @@ void printUnion() {
 void printCsv() {
 
   DEBUG_PRINT(message.unixtime); DEBUG_PRINT(",");
+  DEBUG_PRINT(message.latitude); DEBUG_PRINT(",");
+  DEBUG_PRINT(message.longitude); DEBUG_PRINT(",");
   DEBUG_PRINT(message.voltage); DEBUG_PRINT(",");
   DEBUG_PRINTLN(message.transmitCounter);
 }

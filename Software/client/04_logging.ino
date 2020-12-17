@@ -3,7 +3,6 @@ void enableSd() {
 
   digitalWrite(PIN_RF95_CS, HIGH);    // Disable LoRa SPI CS pin
   delay(1);
-  digitalWrite(PIN_SD_EN, LOW);  // Enable power to microSD
   digitalWrite(PIN_SD_CS, LOW);  // Enable microSD SPI CS pin
   delay(250);
 }
@@ -11,7 +10,6 @@ void enableSd() {
 // Disable power to microSD
 void disableSd() {
   digitalWrite(PIN_RF95_CS, HIGH);    // Disable LoRa SPI CS pin
-  digitalWrite(PIN_SD_EN, HIGH); // Enable power to microSD
 }
 
 // Configure microSD
@@ -53,7 +51,7 @@ void createLogFile() {
   updateFileCreate();
 
   // Write header to file
-  file.println("datetime,unixtime,voltage,rssi,");
+  file.println("datetime,unixtime,voltage,rssi,snr,counter");
 
   // Sync the log file
   file.sync();

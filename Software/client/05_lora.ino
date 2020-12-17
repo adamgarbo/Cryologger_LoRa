@@ -11,7 +11,6 @@
 
 // Enable LoRa
 void enableLora() {
-  digitalWrite(PIN_SD_EN, HIGH); // Disable microSD power
   digitalWrite(PIN_SD_CS, HIGH); // Disable microSD SPI CS pin
   delay(1);
   digitalWrite(PIN_RF95_CS, LOW); // Enable LoRa SPI CS pin

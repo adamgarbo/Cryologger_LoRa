@@ -11,7 +11,7 @@
 
 // Enable LoRa
 void enableLora() {
-  digitalWrite(PIN_FLASH_CS, HIGH); // Disable Flash SPI CS pin
+  digitalWrite(PIN_SD_CS, HIGH); // Disable Flash SPI CS pin
   delay(1);
   digitalWrite(PIN_RF95_CS, LOW);   // Enable LoRa SPI CS pin
   delay(1);

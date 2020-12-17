@@ -13,14 +13,13 @@
 // ----------------------------------------------------------------------------
 // Libraries
 // ----------------------------------------------------------------------------
-#include <ArduinoLowPower.h>
+#include <ArduinoLowPower.h>    // https://github.com/arduino-libraries/ArduinoLowPower
 #include <RHReliableDatagram.h>
 #include <RH_RF95.h>
-#include <RTCZero.h>
-#include <SdFat.h>
+#include <RTCZero.h>            // https://github.com/arduino-libraries/RTCZero
+#include <SdFat.h>              // https://github.com/greiman/SdFat
 #include <SPI.h>
-#include <SPIFlash.h>   // https://github.com/lowpowerlab/spiflash
-#include <TinyGPS++.h>  // https://github.com/mikalhart/TinyGPSPlus
+#include <TinyGPS++.h>          // https://github.com/mikalhart/TinyGPSPlus
 #include <Wire.h>
 
 // ----------------------------------------------------------------------------
@@ -67,16 +66,15 @@
 // ----------------------------------------------------------------------------
 // Pin definitions
 // ----------------------------------------------------------------------------
-#define PIN_RF95_CS   A2
-#define PIN_VBAT      A5
-#define PIN_FLASH_CS  8
-#define PIN_RF95_INT  9
-#define PIN_SD_CS     10
-#define PIN_SD_EN     11
-#define PIN_MOSI      19
-#define PIN_SCK       20
-#define PIN_MISO      21
-#define PIN_GPS_EN    4
+#define PIN_GPS_EN    A5
+#define PIN_VBAT      A7
+#define PIN_SD_CS     4
+#define PIN_RF95_INT  5
+#define PIN_RF95_CS   6
+#define PIN_RF95_RST  7
+#define PIN_MISO      22
+#define PIN_MOSI      23
+#define PIN_SCK       24
 
 // ----------------------------------------------------------------------------
 // Object instantiations
@@ -84,7 +82,6 @@
 RTCZero     rtc;
 SdFat       sd;
 SdFile      file;
-SPIFlash    flash(SS_FLASHMEM);
 TinyGPSPlus gps;
 
 // Singleton instance of the radio driver
@@ -133,32 +130,41 @@ LoraPacket message;
 // ----------------------------------------------------------------------------
 void setup() {
 
+  // Pin assignments
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(PIN_GPS_EN, OUTPUT);
+  pinMode(PIN_RF95_RST, OUTPUT);
+  pinMode(PIN_VBAT, INPUT);
 
   digitalWrite(LED_BUILTIN, LOW);
   digitalWrite(PIN_GPS_EN, LOW);
+  digitalWrite(PIN_SD_CS, HIGH);
+  digitalWrite(PIN_RF95_CS, HIGH);
+  digitalWrite(PIN_RF95_RST, HIGH);
+
+  analogReadResolution(12); // Set analog resolution to 12-bits
 
   Serial.begin(115200);
   //while (!Serial) ; // Wait for serial port to be available
   delay(4000);
 
-  Wire.begin(); // Initialize I2C
-  SPI.begin(); // Initialize SPI
+  printLine(80);
+  DEBUG_PRINTLN("RFM95W reliable datagram server");
+  printLine(80);
 
-  configureFlash(); // Configure Flash
+  Wire.begin(); // Initialize I2C
+  SPI.begin();  // Initialize SPI
+
   configureRtc();   // Configure real-time clock
   syncRtc();        // Sync RTC with GPS
   configureLora();  // Configure RFM95W
-  //configureSd();    // Configure microSD
-  //createLogFile();  // Create log file
+  configureSd();    // Configure microSD
+  createLogFile();  // Create log file
 
-  printLine(80);
-  DEBUG_PRINTLN("RFM95W reliable datagram server");
-  printDateTime();
+  blinkLed(10, 50);
+
   DEBUG_PRINTLN("Listening for messages...");
 
-  printLine(80);
   blinkLed(10, 50);
 }
 

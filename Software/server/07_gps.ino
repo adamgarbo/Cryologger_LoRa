@@ -1,8 +1,6 @@
 // Configure GPS
 void enableGps() {
 
-  DEBUG_PRINTLN("Enabling GPS...");
-
   // Enable power to GPS
   digitalWrite(PIN_GPS_EN, LOW);
 
@@ -24,8 +22,6 @@ void enableGps() {
 }
 
 void disableGps() {
-
-  DEBUG_PRINTLN("Disabling GPS...");
 
   // Close GPS serial port
   GpsSerial.end();

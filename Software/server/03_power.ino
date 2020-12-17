@@ -45,7 +45,7 @@ void goToSleep() {
   disableLora();
 
   // Disable Flash
-  disableFlash();
+  //disableFlash();
 
   /*
     // Disable SPI
