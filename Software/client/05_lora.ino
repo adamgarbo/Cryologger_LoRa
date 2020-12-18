@@ -92,7 +92,7 @@ void sendData() {
       */
 
       // Blink LED
-      blinkLed(PIN_LED, 2, 100);
+      blinkLed(LED_GREEN, 2, 100);
     }
     else {
       DEBUG_PRINTLN("Warning: No reply! Is the server running?");

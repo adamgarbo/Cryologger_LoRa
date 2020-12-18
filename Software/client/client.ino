@@ -27,7 +27,9 @@
 // ----------------------------------------------------------------------------
 // Debugging macros
 // ----------------------------------------------------------------------------
-#define DEBUG true
+#define DEBUG   true
+#define MICROSD true
+
 
 #if DEBUG
 #define DEBUG_PRINT(x)            Serial.print(x)
@@ -77,8 +79,9 @@
 #define PIN_SD_CS     4
 #define PIN_RF95_INT  5
 #define PIN_RF95_CS   6
-#define PIN_LED       8
+#define LED_GREEN     8
 #define PIN_VBAT      9
+#define LED_RED       13
 #define PIN_MISO      22
 #define PIN_MOSI      23
 #define PIN_SCK       24
@@ -123,10 +126,12 @@ typedef union {
     uint32_t  unixtime;         // UNIX Epoch time  (4 bytes)
     float     latitude;         // GPS latitude     (4 bytes)
     float     longitude;        // GPS longitude    (4 bytes)
+    uint32_t  satellites;       // 
+    uint32_t  hdop;             //
     float     voltage;          // Battery voltage  (4 bytes)
     uint16_t  transmitCounter;  // Message counter  (2 bytes)
   } __attribute__((packed));
-  uint8_t bytes[18]; // Size of structure (18 bytes)
+  uint8_t bytes[18]; // Size of structure (22 bytes)
 } LoraPacket;
 
 LoraPacket message;
@@ -164,12 +169,14 @@ void setup() {
 
   configureRtc();   // Configure real-time clock
   syncRtc();        // Sync RTC with GPS
-  configureLora();  // Configure RFM95W
+  configureLora();  // Configure RFM95W radio
   configureSd();    // Configure microSD
   createLogFile();  // Create log file
 
-  blinkLed(PIN_LED, 5, 100);
-  blinkLed(LED_BUILTIN, 5, 100);
+
+  blinkLed(LED_GREEN, 5, 100);
+  blinkLed(LED_RED, 5, 100);
+
 }
 
 // ----------------------------------------------------------------------------
@@ -205,7 +212,7 @@ void loop() {
   }
 
   // Blink LED
-  blinkLed(LED_BUILTIN, 1, 25);
+  blinkLed(LED_RED, 1, 25);
 
   goToSleep();
 

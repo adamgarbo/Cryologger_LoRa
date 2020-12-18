@@ -1,4 +1,4 @@
-// Configure GPS
+// Enable power to GPS, open serial port and configure settings
 void enableGps() {
 
   // Enable power to GPS
@@ -20,6 +20,7 @@ void enableGps() {
   GpsSerial.println("$PGCMD,33,0*6D");
 }
 
+// Disable power to GPS and close serial port
 void disableGps() {
 
   // Close GPS serial port
@@ -83,6 +84,8 @@ void readGps() {
 
             message.latitude = gps.location.lat();
             message.longitude = gps.location.lng();
+            message.satellites = gps.satellites.value();
+            message.hdop = gps.hdop.value();
           }
         }
       }
@@ -110,7 +113,7 @@ void readGps() {
   disableGps();
 }
 
-// Read GPS
+// Sync RTC date and time with GPS
 void syncRtc() {
 
   // Enable GPS
@@ -151,13 +154,13 @@ void syncRtc() {
   }
 
   if (rtcSyncFlag) {
-    blinkLed(PIN_LED, 5, 1000);
+    blinkLed(LED_GREEN, 5, 500);
     DEBUG_PRINT("Success: RTC synced! ");
     printDateTime();
   }
   else {
     DEBUG_PRINTLN("Warning: RTC sync failed! ");
-    blinkLed(LED_BUILTIN, 5, 1000);
+    blinkLed(LED_RED, 5, 500);
   }
 
   // Stop loop timer

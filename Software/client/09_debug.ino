@@ -16,11 +16,13 @@ void printUnion() {
   printLine(30);
   DEBUG_PRINTLN("Payload:");
   printLine(30);
-  DEBUG_PRINT("unixtime:"); printTab(1); DEBUG_PRINTLN(message.unixtime);
-  DEBUG_PRINT("latitude:"); printTab(1); DEBUG_PRINTLN_DEC(message.latitude, 8);
-  DEBUG_PRINT("longitude:"); printTab(1); DEBUG_PRINTLN_DEC(message.longitude, 8);
-  DEBUG_PRINT("voltage:"); printTab(1);DEBUG_PRINTLN_DEC(message.voltage, 2);
-  DEBUG_PRINT("counter:"); printTab(1); DEBUG_PRINTLN(message.transmitCounter);
+  DEBUG_PRINT("unixtime:");   printTab(1);  DEBUG_PRINTLN(message.unixtime);
+  DEBUG_PRINT("latitude:");   printTab(1);  DEBUG_PRINTLN_DEC(message.latitude, 8);
+  DEBUG_PRINT("longitude:");  printTab(1);  DEBUG_PRINTLN_DEC(message.longitude, 8);
+  DEBUG_PRINT("satellites:"); printTab(1);  DEBUG_PRINTLN(message.satellites);
+  DEBUG_PRINT("hdop:");       printTab(2);  DEBUG_PRINTLN(message.hdop);
+  DEBUG_PRINT("voltage:");    printTab(1);  DEBUG_PRINTLN_DEC(message.voltage, 2);
+  DEBUG_PRINT("counter:");    printTab(1);  DEBUG_PRINTLN(message.transmitCounter);
   printLine(30);
 }
 
