@@ -6,7 +6,6 @@ void enableGps() {
 
   // Start serial communications with GPS
   GpsSerial.begin(9600);
-  blinkLed(2, 500);
 
   // Set NMEA port update rate to 1 Hz
   GpsSerial.println("$PMTK220,1000*1F");
@@ -34,7 +33,7 @@ void disableGps() {
 void readGps() {
 
   // Enable GPS
-  //enableGps();
+  enableGps();
 
   // Start loop timer
   unsigned long loopStartTime = millis();
@@ -46,7 +45,7 @@ void readGps() {
   DEBUG_PRINTLN("Beginning to listen for GPS traffic...");
 
   // Look for GPS signal for up to 2 minutes
-  while (!fixFound && millis() - loopStartTime < 2UL * 60UL * 1000UL) {
+  while (!fixFound && millis() - loopStartTime < 1UL * 60UL * 1000UL) {
     if (GpsSerial.available()) {
       charsSeen = true;
       char c = GpsSerial.read();
@@ -108,7 +107,7 @@ void readGps() {
   DEBUG_PRINT(loopEndTime); DEBUG_PRINTLN(" ms");
 
   // Disable GPS
-  //disableGps();
+  disableGps();
 }
 
 // Read GPS
@@ -140,9 +139,7 @@ void syncRtc() {
           // Sync RTC with GPS time
           rtc.setTime(gps.time.hour(), gps.time.minute(), gps.time.second());
           rtc.setDate(gps.date.day(), gps.date.month(), gps.date.year() - 2000);
-
           rtcSyncFlag = true;
-          DEBUG_PRINT("Success: RTC synced! "); printDateTime();
         }
       }
     }
@@ -153,9 +150,15 @@ void syncRtc() {
     }
   }
 
-  DEBUG_PRINTLN(rtcSyncFlag ?
-                ("A GPS fix was found!") :
-                ("No GPS fix was found."));
+  if (rtcSyncFlag) {
+    blinkLed(PIN_LED, 5, 1000);
+    DEBUG_PRINT("Success: RTC synced! ");
+    printDateTime();
+  }
+  else {
+    DEBUG_PRINTLN("Warning: RTC sync failed! ");
+    blinkLed(LED_BUILTIN, 5, 1000);
+  }
 
   // Stop loop timer
   unsigned long loopEndTime = millis() - loopStartTime;

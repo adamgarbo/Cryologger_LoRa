@@ -40,21 +40,20 @@ void readRtc() {
 
   // Stop loop timer
   unsigned long loopEndTime = millis() - loopStartTime;
-  //DEBUG_PRINT("readRtc() function execution: "); 
-  //DEBUG_PRINT(loopEndTime); 
-  //DEBUG_PRINTLN(" ms");
+  DEBUG_PRINT("readRtc() function execution: "); 
+  DEBUG_PRINT(loopEndTime); 
+  DEBUG_PRINTLN(" ms");
 }
 
 // Set RTC rolling alarm
 void setRtcAlarm() {
 
-//(rtc.getSeconds() + alarmSeconds) % 60
   rtc.setAlarmTime((rtc.getHours() + alarmHours) % 24,
                    (rtc.getMinutes() + alarmMinutes) % 60,
-                   0);
+                   (rtc.getSeconds() + alarmSeconds) % 60);
   rtc.setAlarmDate(rtc.getDay(), rtc.getMonth(), rtc.getYear());
 
-  rtc.enableAlarm(rtc.MATCH_SS);
+  rtc.enableAlarm(rtc.MATCH_MMSS);
 
   // Attach alarm to interrupt service routine
   rtc.attachInterrupt(alarmIsr);

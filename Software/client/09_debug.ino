@@ -13,15 +13,15 @@ void printTab(byte tabs) {
 
 // Print contents of union/structure
 void printUnion() {
-  printLine(80);
-  DEBUG_PRINTLN("Union/structure");
-  printLine(80);
+  printLine(30);
+  DEBUG_PRINTLN("Payload:");
+  printLine(30);
   DEBUG_PRINT("unixtime:"); printTab(1); DEBUG_PRINTLN(message.unixtime);
-  DEBUG_PRINT("latitude:"); printTab(1); DEBUG_PRINTLN(message.latitude);
-  DEBUG_PRINT("longitude:"); printTab(1); DEBUG_PRINTLN(message.longitude);
-  DEBUG_PRINT("voltage:"); printTab(1); DEBUG_PRINTLN(message.voltage);
+  DEBUG_PRINT("latitude:"); printTab(1); DEBUG_PRINTLN_DEC(message.latitude, 8);
+  DEBUG_PRINT("longitude:"); printTab(1); DEBUG_PRINTLN_DEC(message.longitude, 8);
+  DEBUG_PRINT("voltage:"); printTab(1);DEBUG_PRINTLN_DEC(message.voltage, 2);
   DEBUG_PRINT("counter:"); printTab(1); DEBUG_PRINTLN(message.transmitCounter);
-  printLine(80);
+  printLine(30);
 }
 
 // Print contents of union/structure in hexadecimal
