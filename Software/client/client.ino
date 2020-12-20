@@ -30,7 +30,6 @@
 #define DEBUG   true
 #define MICROSD true
 
-
 #if DEBUG
 #define DEBUG_PRINT(x)            Serial.print(x)
 #define DEBUG_PRINTLN(x)          Serial.println(x)
@@ -108,14 +107,12 @@ volatile bool watchdogFlag    = false;  // Watchdog Timer ISR flag
 volatile int  watchdogCounter = 0;      // Watchdog Timer interrupt counter
 bool          ledState        = LOW;    // LED toggle flag
 bool          rtcSyncFlag     = false;  // RTC synchronization flag
-byte          alarmSeconds    = 0;      // Rolling alarm seconds
-byte          alarmMinutes    = 5;      // Rolling alarm minutes
+byte          alarmSeconds    = 10;      // Rolling alarm seconds
+byte          alarmMinutes    = 0;      // Rolling alarm minutes
 byte          alarmHours      = 0;      // Rolling alarm hours
 unsigned long previousMillis  = 0;      // Global millis() timer
 unsigned int  transmitCounter = 0;      // LoRa transmission counter
-
 char          fileName[30]    = "";
-char          outputData[50];           // Recording to SD in 512-byte chunks
 
 // Dont put this on the stack:
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
@@ -123,15 +120,17 @@ uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 // Union/structure to store and send data byte-by-byte via LoRa
 typedef union {
   struct {
-    uint32_t  unixtime;         // UNIX Epoch time  (4 bytes)
-    float     latitude;         // GPS latitude     (4 bytes)
-    float     longitude;        // GPS longitude    (4 bytes)
-    uint32_t  satellites;       // 
-    uint32_t  hdop;             //
-    float     voltage;          // Battery voltage  (4 bytes)
-    uint16_t  transmitCounter;  // Message counter  (2 bytes)
+    uint32_t  unixtime;         // UNIX Epoch time                  (4 bytes)
+    float     latitude;         // GPS latitude                     (4 bytes)
+    float     longitude;        // GPS longitude                    (4 bytes)
+    uint32_t  satellites;       // Number of GPS satellites         (4 bytes)
+    uint32_t  hdop;             // GPS HDOP                         (4 bytes)
+    float     voltage;          // Battery voltage                  (4 bytes)
+    int16_t   rssi;             // RSSI of LoRa server transmission (2 bytes)
+    int16_t   snr;              // SNR of LoRa server transmission  (2 bytes)
+    uint16_t  transmitCounter;  // Message counter                  (2 bytes)
   } __attribute__((packed));
-  uint8_t bytes[18]; // Size of structure (22 bytes)
+  uint8_t bytes[30]; // Size of structure (30 bytes)
 } LoraPacket;
 
 LoraPacket message;
@@ -168,11 +167,13 @@ void setup() {
   SPI.begin();  // Initialize SPI
 
   configureRtc();   // Configure real-time clock
+  enableGps();      // Enable GPS
   syncRtc();        // Sync RTC with GPS
   configureLora();  // Configure RFM95W radio
   configureSd();    // Configure microSD
   createLogFile();  // Create log file
 
+  setRtcAlarm1();   // Set initial alarm for minute rollover
 
   blinkLed(LED_GREEN, 5, 100);
   blinkLed(LED_RED, 5, 100);

@@ -12,20 +12,13 @@ void readBattery() {
   // Write data to union structure
   message.voltage = voltage;
 
-  int vbat = voltage * 1000;
-
-  // Write data to SD buffer
-  char tempData[6];
-  sprintf(tempData, "%d,", vbat);
-  strcat(outputData, tempData);
-
-  //DEBUG_PRINT("voltage: "); DEBUG_PRINTLN(voltage);
+  DEBUG_PRINT("voltage: "); DEBUG_PRINTLN(voltage);
 
   // Stop loop timer
   unsigned long loopEndTime = millis() - loopStartTime;
-  //DEBUG_PRINT("readBattery() function execution: ");
-  //DEBUG_PRINT(loopEndTime);
-  //DEBUG_PRINTLN(" ms");
+  DEBUG_PRINT("readBattery() function execution: ");
+  DEBUG_PRINT(loopEndTime);
+  DEBUG_PRINTLN(" ms");
 }
 
 // Blink LED (non-blocking)
@@ -69,8 +62,8 @@ void goToSleep() {
     digitalWrite(PIN_MICROSD_CS, LOW);
   */
   // Enter deep sleep and wait for WDT or RTC alarm interrupt
-  LowPower.deepSleep();
-  //delay(1000);
+  //LowPower.deepSleep();
+  delay(1000);
 }
 
 void wakeUp() {

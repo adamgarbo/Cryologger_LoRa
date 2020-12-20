@@ -110,14 +110,14 @@ void readGps() {
   DEBUG_PRINT(loopEndTime); DEBUG_PRINTLN(" ms");
 
   // Disable GPS
-  disableGps();
+  //disableGps();
 }
 
 // Sync RTC date and time with GPS
 void syncRtc() {
 
   // Enable GPS
-  enableGps();
+  //enableGps();
 
   // Start loop timer
   unsigned long loopStartTime = millis();
@@ -169,5 +169,5 @@ void syncRtc() {
   DEBUG_PRINT(loopEndTime); DEBUG_PRINTLN(" ms");
 
   // Disable GPS
-  disableGps();
+  //disableGps();
 }

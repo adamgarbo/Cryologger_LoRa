@@ -3,7 +3,11 @@ void configureRtc() {
 
   // Initialize RTC
   rtc.begin();
+}
 
+
+
+void setRtcAlarm1() {
   // Manually set RTC time and date
   //rtc.setTime(12, 59, 55); // (hours, minutes, seconds)
   //rtc.setDate(10, 12, 20); // (day, month, year)
@@ -18,30 +22,19 @@ void configureRtc() {
   rtc.attachInterrupt(alarmIsr);
 }
 
-
 // Read RTC's date and time
 void readRtc() {
 
   // Start loop timer
   unsigned long loopStartTime = millis();
 
-  // Get UNIX Epoch time
-  unsigned long unixtime = rtc.getEpoch();
-
   // Write data to union structure
-  message.unixtime = unixtime;
-  
-  // Write data to SD buffer
-  char tempData[31];
-  sprintf(tempData, "20%02d-%02d-%02d %02d:%02d:%02d,%ld,",
-          rtc.getYear(), rtc.getMonth(), rtc.getDay(), rtc.getHours(),
-          rtc.getMinutes(), rtc.getSeconds(), unixtime);
-  strcat(outputData, tempData);
+  message.unixtime = rtc.getEpoch();
 
   // Stop loop timer
   unsigned long loopEndTime = millis() - loopStartTime;
-  DEBUG_PRINT("readRtc() function execution: "); 
-  DEBUG_PRINT(loopEndTime); 
+  DEBUG_PRINT("readRtc() function execution: ");
+  DEBUG_PRINT(loopEndTime);
   DEBUG_PRINTLN(" ms");
 }
 
@@ -53,7 +46,7 @@ void setRtcAlarm() {
                    (rtc.getSeconds() + alarmSeconds) % 60);
   rtc.setAlarmDate(rtc.getDay(), rtc.getMonth(), rtc.getYear());
 
-  rtc.enableAlarm(rtc.MATCH_MMSS);
+  rtc.enableAlarm(rtc.MATCH_SS);
 
   // Attach alarm to interrupt service routine
   rtc.attachInterrupt(alarmIsr);

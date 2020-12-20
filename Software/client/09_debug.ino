@@ -22,6 +22,8 @@ void printUnion() {
   DEBUG_PRINT("satellites:"); printTab(1);  DEBUG_PRINTLN(message.satellites);
   DEBUG_PRINT("hdop:");       printTab(2);  DEBUG_PRINTLN(message.hdop);
   DEBUG_PRINT("voltage:");    printTab(1);  DEBUG_PRINTLN_DEC(message.voltage, 2);
+  DEBUG_PRINT("rssi:");       printTab(2);  DEBUG_PRINTLN(message.rssi);
+  DEBUG_PRINT("snr:");        printTab(2);  DEBUG_PRINTLN(message.snr);
   DEBUG_PRINT("counter:");    printTab(1);  DEBUG_PRINTLN(message.transmitCounter);
   printLine(30);
 }
