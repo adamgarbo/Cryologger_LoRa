@@ -3,13 +3,12 @@ void configureRtc() {
 
   // Initialize RTC
   rtc.begin();
+}
 
+void setRtcAlarm1() {
   // Manually set RTC time and date
   //rtc.setTime(12, 59, 55); // (hours, minutes, seconds)
   //rtc.setDate(10, 12, 20); // (day, month, year)
-
-  // Set RTC epoch  
-  //rtc.setEpoch(1608055300);
 
   // Set alarm to occur on next hour rollover
   rtc.setAlarmTime(0, 0, 0);
@@ -21,7 +20,6 @@ void configureRtc() {
   rtc.attachInterrupt(alarmIsr);
 }
 
-
 // Read RTC's date and time
 void readRtc() {
 
@@ -29,13 +27,7 @@ void readRtc() {
   unsigned long loopStartTime = millis();
 
   // Get UNIX Epoch time
-  unsigned long unixtime = rtc.getEpoch();
-
-  // Write data to SD buffer
-  sprintf(tempData, "20%02d-%02d-%02d %02d:%02d:%02d,%ld,",
-          rtc.getYear(), rtc.getMonth(), rtc.getDay(), rtc.getHours(),
-          rtc.getMinutes(), rtc.getSeconds(), unixtime);
-  strcat(outputData, tempData);
+  unixtime = rtc.getEpoch();
 
   // Stop loop timer
   unsigned long loopEndTime = millis() - loopStartTime;

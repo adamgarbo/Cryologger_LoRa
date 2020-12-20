@@ -28,17 +28,21 @@
 #define DEBUG true
 
 #if DEBUG
-#define DEBUG_PRINT(x)        Serial.print(x)
-#define DEBUG_PRINTLN(x)      Serial.println(x)
-#define DEBUG_PRINT_HEX(x)    Serial.print(x, HEX)
-#define DEBUG_PRINTLN_HEX(x)  Serial.println(x, HEX)
-#define DEBUG_WRITE(x)        Serial.write(x)
+#define DEBUG_PRINT(x)            Serial.print(x)
+#define DEBUG_PRINTLN(x)          Serial.println(x)
+#define DEBUG_PRINT_HEX(x)        Serial.print(x, HEX)
+#define DEBUG_PRINTLN_HEX(x)      Serial.println(x, HEX)
+#define DEBUG_PRINT_DEC(x, y)     Serial.print(x, y)
+#define DEBUG_PRINTLN_DEC(x, y)   Serial.println(x, y)
+#define DEBUG_WRITE(x)            Serial.write(x)
 
 #else
 #define DEBUG_PRINT(x)
 #define DEBUG_PRINTLN(x)
 #define DEBUG_PRINT_HEX(x)
 #define DEBUG_PRINTLN_HEX(x)
+#define DEBUG_PRINT_DEC(x, y)
+#define DEBUG_PRINTLN_DEC(x, y)
 #define DEBUG_WRITE(x)
 #endif
 
@@ -66,16 +70,18 @@
 // ----------------------------------------------------------------------------
 // Pin definitions
 // ----------------------------------------------------------------------------
+//#define PIN_RF95_RST  A4
 #define PIN_GPS_EN    A5
-#define PIN_VBAT      A7
 #define PIN_SD_CS     4
 #define PIN_RF95_INT  5
 #define PIN_RF95_CS   6
-#define PIN_RF95_RST  7
+#define PIN_VBAT      9
 #define PIN_MISO      22
 #define PIN_MOSI      23
 #define PIN_SCK       24
 
+#define LED_GREEN     8
+#define LED_RED       13
 // ----------------------------------------------------------------------------
 // Object instantiations
 // ----------------------------------------------------------------------------
@@ -103,9 +109,9 @@ byte          alarmMinutes    = 1;      // Rolling alarm minutes
 byte          alarmHours      = 0;      // Rolling alarm hours
 unsigned long previousMillis  = 0;      // Global millis() timer
 
+unsigned long unixtime        = 0;
+float         voltage         = 0.0;    //
 char          fileName[30]    = "";
-char          outputData[100];          // Recording to SD in 512-byte chunks
-char          tempData[50];             // Temporary SD data buffer
 
 // Dont put this on the stack:
 // See: https://stackoverflow.com/questions/46437423/how-can-i-avoid-putting-this-variable-on-the-stack
@@ -114,13 +120,17 @@ uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 // Union/structure to store and send data byte-by-byte via LoRa
 typedef union {
   struct {
-    uint32_t  unixtime;         // UNIX Epoch time  (4 bytes)
-    float     latitude;         // GPS latitude     (4 bytes)
-    float     longitude;        // GPS longitude    (4 bytes)
-    float     voltage;          // Battery voltage  (4 bytes)
-    uint16_t  transmitCounter;  // Message counter  (2 bytes)
+    uint32_t  unixtime;         // UNIX Epoch time                  (4 bytes)
+    float     latitude;         // GPS latitude                     (4 bytes)
+    float     longitude;        // GPS longitude                    (4 bytes)
+    uint32_t  satellites;       // Number of GPS satellites         (4 bytes)
+    uint32_t  hdop;             // GPS HDOP                         (4 bytes)
+    float     voltage;          // Battery voltage                  (4 bytes)
+    int16_t   rssi;             // RSSI of LoRa server transmission (2 bytes)
+    int16_t   snr;              // SNR of LoRa server transmission  (2 bytes)
+    uint16_t  transmitCounter;  // Message counter                  (2 bytes)
   } __attribute__((packed));
-  uint8_t bytes[18]; // Size of structure (18 bytes)
+  uint8_t bytes[30]; // Size of structure (30 bytes)
 } LoraPacket;
 
 LoraPacket message;
@@ -133,14 +143,14 @@ void setup() {
   // Pin assignments
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(PIN_GPS_EN, OUTPUT);
-  pinMode(PIN_RF95_RST, OUTPUT);
+  //pinMode(PIN_RF95_RST, OUTPUT);
   pinMode(PIN_VBAT, INPUT);
 
   digitalWrite(LED_BUILTIN, LOW);
   digitalWrite(PIN_GPS_EN, LOW);
   digitalWrite(PIN_SD_CS, HIGH);
   digitalWrite(PIN_RF95_CS, HIGH);
-  digitalWrite(PIN_RF95_RST, HIGH);
+  //digitalWrite(PIN_RF95_RST, HIGH);
 
   analogReadResolution(12); // Set analog resolution to 12-bits
 
@@ -161,11 +171,11 @@ void setup() {
   configureSd();    // Configure microSD
   createLogFile();  // Create log file
 
-  blinkLed(10, 50);
-
   DEBUG_PRINTLN("Listening for messages...");
 
-  blinkLed(10, 50);
+  blinkLed(LED_GREEN, 5, 100);
+  blinkLed(LED_RED, 5, 100);
+
 }
 
 // ----------------------------------------------------------------------------
@@ -182,26 +192,29 @@ void loop() {
     if (manager.recvfromAck(buf, &len, &from)) {
 
       char tempBuffer[100];
-      sprintf(tempBuffer, "Request from: 0x%02X\nSize: %d RSSI: %d SNR: %d",
+      sprintf(tempBuffer, "Request from: 0x%02X Size: %d RSSI: %d SNR: %d",
               from, len, driver.lastRssi(), driver.lastSNR() );
-      DEBUG_PRINTLN(tempBuffer);
+      //DEBUG_PRINTLN(tempBuffer);
 
       // Write incoming message buffer to union/structure
       for (int i = 0; i < len; ++i) {
         message.bytes[i] = buf[i];
       }
 
+      // Log incoming transmission
+      logData();
+
       // Print union/structure payload contents
-      printUnion();
-      printCsv();
-      //printUnionHex();
+      //printUnion(); // 
+      printCsv(); //
+      //printUnionHex(); // Display data in hexadecimal
 
       // Send reply back to the originator client
       uint8_t data[] = "OK";
       if (!manager.sendtoWait(data, sizeof(data), from)) {
         DEBUG_PRINTLN("sendtoWait failed");
       }
-      blinkLed(2, 25);
+      blinkLed(LED_GREEN, 2, 100);
     }
   }
 }
