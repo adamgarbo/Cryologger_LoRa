@@ -4,15 +4,10 @@ void readBattery() {
   // Start loop timer
   unsigned long loopStartTime = millis();
 
-  float voltage = analogRead(A5) * 2.0 * (3.3 / 4096.0); // 0.003226 = 3.3 / 1023
+  // Measure voltage
+  voltage = analogRead(A5) * 2.0 * (3.3 / 4096.0); // 0.003226 = 3.3 / 1023
 
-  int vbat = voltage * 1000;
-
-  // Write data to SD buffer
-  sprintf(tempData, "%d,", vbat);
-  strcat(outputData, tempData);
-
-  //DEBUG_PRINT("voltage: "); DEBUG_PRINTLN(voltage);
+  DEBUG_PRINT("voltage: "); DEBUG_PRINTLN(voltage);
 
   // Stop loop timer
   unsigned long loopEndTime = millis() - loopStartTime;
@@ -22,9 +17,9 @@ void readBattery() {
 }
 
 // Blink LED (non-blocking)
-void blinkLed(byte ledFlashes, unsigned int ledDelay) {
+void blinkLed(byte ledPin, byte ledFlashes, unsigned int ledDelay) {
 
-  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(ledPin, OUTPUT);
   byte i = 0;
 
   while (i < ledFlashes * 2) {
@@ -32,11 +27,11 @@ void blinkLed(byte ledFlashes, unsigned int ledDelay) {
     if (currentMillis - previousMillis > ledDelay) {
       previousMillis = currentMillis;
       ledState = !ledState;
-      digitalWrite(LED_BUILTIN, ledState);
+      digitalWrite(ledPin, ledState);
       i++;
     }
   }
-  digitalWrite(LED_BUILTIN, LOW);
+  digitalWrite(ledPin, LOW);
 }
 
 void goToSleep() {
@@ -45,7 +40,7 @@ void goToSleep() {
   disableLora();
 
   // Disable Flash
-  disableFlash();
+  //disableFlash();
 
   /*
     // Disable SPI

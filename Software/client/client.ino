@@ -8,15 +8,17 @@
   client with the RHReliableDatagram class, using the RH_RF95 driver to control
   a RF95 radio.
   - Designed to work with RF95 reliable datagram server
+
+  - Sleep current of 260 uA measured December 17, 2020
 */
 
 // ----------------------------------------------------------------------------
 // Libraries
 // ----------------------------------------------------------------------------
-#include <ArduinoLowPower.h>
-#include <RHReliableDatagram.h>
-#include <RH_RF95.h>
-#include <RTCZero.h>
+#include <ArduinoLowPower.h>      // https://github.com/arduino-libraries/ArduinoLowPower
+#include <RHReliableDatagram.h>   // https://airspayce.com/mikem/arduino/RadioHead/
+#include <RH_RF95.h>              // https://airspayce.com/mikem/arduino/RadioHead/
+#include <RTCZero.h>              // https://github.com/arduino-libraries/RTCZero
 #include <SdFat.h>                // https://github.com/greiman/SdFat
 #include <SPI.h>
 #include <TinyGPS++.h>            // https://github.com/mikalhart/TinyGPSPlus
@@ -25,20 +27,25 @@
 // ----------------------------------------------------------------------------
 // Debugging macros
 // ----------------------------------------------------------------------------
-#define DEBUG true
+#define DEBUG   true
+#define MICROSD true
 
 #if DEBUG
-#define DEBUG_PRINT(x)        Serial.print(x)
-#define DEBUG_PRINTLN(x)      Serial.println(x)
-#define DEBUG_PRINT_HEX(x)    Serial.print(x, HEX)
-#define DEBUG_PRINTLN_HEX(x)  Serial.println(x, HEX)
-#define DEBUG_WRITE(x)        Serial.write(x)
+#define DEBUG_PRINT(x)            Serial.print(x)
+#define DEBUG_PRINTLN(x)          Serial.println(x)
+#define DEBUG_PRINT_HEX(x)        Serial.print(x, HEX)
+#define DEBUG_PRINTLN_HEX(x)      Serial.println(x, HEX)
+#define DEBUG_PRINT_DEC(x, y)     Serial.print(x, y)
+#define DEBUG_PRINTLN_DEC(x, y)   Serial.println(x, y)
+#define DEBUG_WRITE(x)            Serial.write(x)
 
 #else
 #define DEBUG_PRINT(x)
 #define DEBUG_PRINTLN(x)
 #define DEBUG_PRINT_HEX(x)
 #define DEBUG_PRINTLN_HEX(x)
+#define DEBUG_PRINT_DEC(x, y)
+#define DEBUG_PRINTLN_DEC(x, y)
 #define DEBUG_WRITE(x)
 #endif
 
@@ -66,21 +73,21 @@
 // ----------------------------------------------------------------------------
 // Pin definitions
 // ----------------------------------------------------------------------------
-#define PIN_RF95_CS   A2
-#define PIN_VBAT      A5
-#define PIN_FLASH_CS  8
-#define PIN_RF95_INT  9
-#define PIN_SD_CS     10
-#define PIN_SD_EN     11
-#define PIN_MOSI      19
-#define PIN_SCK       20
-#define PIN_MISO      21
-#define PIN_GPS_EN    4
+//#define PIN_RF95_RST  A4
+#define PIN_GPS_EN    A5
+#define PIN_SD_CS     4
+#define PIN_RF95_INT  5
+#define PIN_RF95_CS   6
+#define LED_GREEN     8
+#define PIN_VBAT      9
+#define LED_RED       13
+#define PIN_MISO      22
+#define PIN_MOSI      23
+#define PIN_SCK       24
 
 // ----------------------------------------------------------------------------
 // Object instantiations
 // ----------------------------------------------------------------------------
-
 RTCZero     rtc;
 SdFat       sd;
 SdFile      file;
@@ -100,14 +107,12 @@ volatile bool watchdogFlag    = false;  // Watchdog Timer ISR flag
 volatile int  watchdogCounter = 0;      // Watchdog Timer interrupt counter
 bool          ledState        = LOW;    // LED toggle flag
 bool          rtcSyncFlag     = false;  // RTC synchronization flag
-byte          alarmSeconds    = 0;      // Rolling alarm seconds
-byte          alarmMinutes    = 1;      // Rolling alarm minutes
+byte          alarmSeconds    = 10;      // Rolling alarm seconds
+byte          alarmMinutes    = 0;      // Rolling alarm minutes
 byte          alarmHours      = 0;      // Rolling alarm hours
 unsigned long previousMillis  = 0;      // Global millis() timer
 unsigned int  transmitCounter = 0;      // LoRa transmission counter
-
 char          fileName[30]    = "";
-char          outputData[50];           // Recording to SD in 512-byte chunks
 
 // Dont put this on the stack:
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
@@ -115,13 +120,17 @@ uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 // Union/structure to store and send data byte-by-byte via LoRa
 typedef union {
   struct {
-    uint32_t  unixtime;         // UNIX Epoch time  (4 bytes)
-    float     latitude;         // GPS latitude     (4 bytes)
-    float     longitude;        // GPS longitude    (4 bytes)
-    float     voltage;          // Battery voltage  (4 bytes)
-    uint16_t  transmitCounter;  // Message counter  (2 bytes)
+    uint32_t  unixtime;         // UNIX Epoch time                  (4 bytes)
+    float     latitude;         // GPS latitude                     (4 bytes)
+    float     longitude;        // GPS longitude                    (4 bytes)
+    uint32_t  satellites;       // Number of GPS satellites         (4 bytes)
+    uint32_t  hdop;             // GPS HDOP                         (4 bytes)
+    float     voltage;          // Battery voltage                  (4 bytes)
+    int16_t   rssi;             // RSSI of LoRa server transmission (2 bytes)
+    int16_t   snr;              // SNR of LoRa server transmission  (2 bytes)
+    uint16_t  transmitCounter;  // Message counter                  (2 bytes)
   } __attribute__((packed));
-  uint8_t bytes[18]; // Size of structure (18 bytes)
+  uint8_t bytes[30]; // Size of structure (30 bytes)
 } LoraPacket;
 
 LoraPacket message;
@@ -133,15 +142,16 @@ void setup() {
 
   // Pin assignments
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(PIN_LED, OUTPUT);
   pinMode(PIN_GPS_EN, OUTPUT);
-  pinMode(PIN_SD_EN, OUTPUT);
-  pinMode(PIN_VBAT, INPUT);
+  //pinMode(PIN_RF95_RST, OUTPUT);
 
   digitalWrite(LED_BUILTIN, LOW);
+  digitalWrite(PIN_LED, LOW);
   digitalWrite(PIN_GPS_EN, LOW);
-  digitalWrite(PIN_SD_EN, LOW);
   digitalWrite(PIN_SD_CS, HIGH);
   digitalWrite(PIN_RF95_CS, HIGH);
+  //digitalWrite(PIN_RF95_RST, HIGH);
 
   analogReadResolution(12); // Set analog resolution to 12-bits
 
@@ -151,20 +161,23 @@ void setup() {
 
   printLine(80);
   DEBUG_PRINTLN("RFM95W Reliable Datagram Client");
-  printDateTime();
   printLine(80);
 
   Wire.begin(); // Initialize I2C
   SPI.begin();  // Initialize SPI
 
   configureRtc();   // Configure real-time clock
-  configureGps();   // Configure GPS
+  enableGps();      // Enable GPS
   syncRtc();        // Sync RTC with GPS
-  configureLora();  // Configure RFM95W
+  configureLora();  // Configure RFM95W radio
   configureSd();    // Configure microSD
   createLogFile();  // Create log file
 
-  blinkLed(10, 50);
+  setRtcAlarm1();   // Set initial alarm for minute rollover
+
+  blinkLed(LED_GREEN, 5, 100);
+  blinkLed(LED_RED, 5, 100);
+
 }
 
 // ----------------------------------------------------------------------------
@@ -184,6 +197,7 @@ void loop() {
     // Perform measurements
     readRtc();
     readBattery();
+    readGps();
 
     // Transmit data
     sendData();
@@ -199,8 +213,8 @@ void loop() {
   }
 
   // Blink LED
-  blinkLed(1, 25);
+  blinkLed(LED_RED, 1, 25);
 
   goToSleep();
-  //delay(1000);
+
 }

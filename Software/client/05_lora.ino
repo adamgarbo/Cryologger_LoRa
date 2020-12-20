@@ -11,7 +11,6 @@
 
 // Enable LoRa
 void enableLora() {
-  digitalWrite(PIN_SD_EN, HIGH); // Disable microSD power
   digitalWrite(PIN_SD_CS, HIGH); // Disable microSD SPI CS pin
   delay(1);
   digitalWrite(PIN_RF95_CS, LOW); // Enable LoRa SPI CS pin
@@ -92,8 +91,11 @@ void sendData() {
         DEBUG_PRINTLN();
       */
 
+      message.rssi = driver.lastRssi();
+      message.snr = driver.lastSNR();
+
       // Blink LED
-      blinkLed(3, 25);
+      blinkLed(LED_GREEN, 2, 100);
     }
     else {
       DEBUG_PRINTLN("Warning: No reply! Is the server running?");
@@ -102,10 +104,5 @@ void sendData() {
   else {
     DEBUG_PRINTLN("Warning: sendtoWait failed!");
   }
-
-  // Write data to SD buffer
-  char tempData[25];
-  sprintf(tempData, "%d,%d,%d\n", driver.lastRssi(), driver.lastSNR(), transmitCounter);
-  strcat(outputData, tempData);
 
 }

@@ -3,7 +3,6 @@ void enableSd() {
 
   digitalWrite(PIN_RF95_CS, HIGH);    // Disable LoRa SPI CS pin
   delay(1);
-  digitalWrite(PIN_SD_EN, LOW);  // Enable power to microSD
   digitalWrite(PIN_SD_CS, LOW);  // Enable microSD SPI CS pin
   delay(250);
 }
@@ -11,7 +10,6 @@ void enableSd() {
 // Disable power to microSD
 void disableSd() {
   digitalWrite(PIN_RF95_CS, HIGH);    // Disable LoRa SPI CS pin
-  digitalWrite(PIN_SD_EN, HIGH); // Enable power to microSD
 }
 
 // Configure microSD
@@ -53,7 +51,7 @@ void createLogFile() {
   updateFileCreate();
 
   // Write header to file
-  file.println("datetime,unixtime,voltage,rssi,");
+  file.println("unixtime,latitude,longitude,satellites,hdop,voltage,rssi,snr,counter");
 
   // Sync the log file
   file.sync();
@@ -69,7 +67,15 @@ void logData() {
 
   // Open log file and append data
   if (file.open(fileName, O_APPEND | O_WRITE)) {
-    file.write(outputData, strlen(outputData)); // Write data to SD
+    file.print(message.unixtime); file.print(",");
+    file.print(message.latitude, 6); file.print(",");
+    file.print(message.longitude, 6); file.print(",");
+    file.print(message.satellites); file.print(",");
+    file.print(message.hdop); file.print(",");
+    file.print(message.voltage, 2); file.print(",");
+    file.print(message.rssi); file.print(",");
+    file.print(message.snr); file.print(",");
+    file.println(message.transmitCounter);
     updateFileAccess(); // Update file access and write timestamps
   }
   else {
@@ -91,15 +97,9 @@ void logData() {
     DEBUG_PRINTLN(F("Warning: File close error!"));
   }
 
-  // Print outputData to terminal
-  DEBUG_PRINT("outputData: "); DEBUG_PRINT(outputData);
-
   // Blink LED
-  blinkLed(2, 10);
+  blinkLed(LED_RED, 2, 100);
 
-  // Clear arrays
-  memset(outputData, 0x00, sizeof(outputData));
-  //memset(tempData, 0x00, sizeof(tempData));
 }
 
 // Update the file create timestamp
