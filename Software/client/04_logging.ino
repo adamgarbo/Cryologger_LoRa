@@ -7,9 +7,9 @@ void enableSd() {
   delay(250);
 }
 
-// Disable power to microSD
+// Disable microSD
 void disableSd() {
-  digitalWrite(PIN_RF95_CS, HIGH);    // Disable LoRa SPI CS pin
+  digitalWrite(PIN_SD_CS, HIGH);    // Disable LoRa SPI CS pin
 }
 
 // Configure microSD

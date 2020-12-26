@@ -46,7 +46,7 @@ void setRtcAlarm() {
                    (rtc.getSeconds() + alarmSeconds) % 60);
   rtc.setAlarmDate(rtc.getDay(), rtc.getMonth(), rtc.getYear());
 
-  rtc.enableAlarm(rtc.MATCH_SS);
+  rtc.enableAlarm(rtc.MATCH_MMSS);
 
   // Attach alarm to interrupt service routine
   rtc.attachInterrupt(alarmIsr);
